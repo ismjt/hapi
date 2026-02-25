@@ -130,7 +130,20 @@ ${chalk.bold.cyan('Claude Code Options (from `claude --help`):')}
             })
             runnerProcess.unref()
 
-            await new Promise(resolve => setTimeout(resolve, 200))
+            // 等待 runner 完成初始化并注册机器
+            // 使用轮询策略，最多等待 10 秒
+            const maxWaitMs = 10_000
+            const startTime = Date.now()
+            let runnerReady = false
+
+            while (!runnerReady && Date.now() - startTime < maxWaitMs) {
+                await new Promise(resolve => setTimeout(resolve, 200))
+                runnerReady = await isRunnerRunningCurrentlyInstalledHappyVersion()
+            }
+
+            if (!runnerReady) {
+                logger.debug('Warning: runner may not be fully initialized yet')
+            }
         }
 
         try {

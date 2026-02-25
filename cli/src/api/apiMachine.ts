@@ -303,6 +303,11 @@ export class ApiMachineClient {
 
     private startKeepAlive(): void {
         this.stopKeepAlive()
+        // 立即发送第一个 machine-alive 事件，确保机器被标记为活跃
+        this.socket.emit('machine-alive', {
+            machineId: this.machine.id,
+            time: Date.now()
+        })
         this.keepAliveInterval = setInterval(() => {
             this.socket.emit('machine-alive', {
                 machineId: this.machine.id,

@@ -15,4 +15,7 @@ export const queryKeys = {
     ] as const,
     slashCommands: (sessionId: string) => ['slash-commands', sessionId] as const,
     skills: (sessionId: string) => ['skills', sessionId] as const,
+    projects: ['projects'] as const,
+    project: (projectId: string) => ['project', projectId] as const,
+    projectDirectory: (projectId: string, path: string) => ['project-directory', projectId, path] as const,
 }

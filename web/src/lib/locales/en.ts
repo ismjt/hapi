@@ -202,6 +202,13 @@ export default {
   'composer.send': 'Send',
   'composer.stop': 'Stop',
   'composer.voice': 'Voice assistant',
+  'composer.clear': 'Clear input',
+  'composer.saveInput': 'Save input',
+  'composer.savedInputs': 'Saved inputs',
+  'composer.noSavedInputs': 'No saved inputs',
+  'composer.fillInput': 'Fill',
+  'composer.deleteInput': 'Delete',
+  'composer.saved': 'Saved',
 
   // Voice assistant
   'voice.connecting': 'Connecting...',
@@ -269,4 +276,20 @@ export default {
   'misc.permissionRequired': 'permission required',
   'misc.percentLeft': '{percent}% left',
   'misc.online': 'online',
+
+  // Projects
+  'projects.title': 'Projects',
+  'projects.name': 'Project Name',
+  'projects.namePlaceholder': 'My Project',
+  'projects.path': 'Project Path',
+  'projects.tags': 'Tags',
+  'projects.tagsPlaceholder': 'Type a tag and press Enter',
+  'projects.tagsHint': 'Max 10 tags, 50 characters each',
+  'projects.empty': 'No projects yet. Create one to get started.',
+  'projects.create.title': 'Create Project',
+  'projects.create.submit': 'Create',
+  'projects.edit.title': 'Edit Project',
+  'projects.delete.title': 'Delete Project',
+  'projects.delete.description': 'Are you sure you want to delete "{name}"? This action cannot be undone.',
+  'projects.directory.empty': 'This directory is empty.',
 } as const

@@ -1,6 +1,7 @@
 import type {
     AttachmentMetadata,
     AuthResponse,
+    CreateProjectRequest,
     DeleteUploadResponse,
     ListDirectoryResponse,
     FileReadResponse,
@@ -11,12 +12,15 @@ import type {
     MessagesResponse,
     ModelMode,
     PermissionMode,
+    ProjectResponse,
+    ProjectsResponse,
     PushSubscriptionPayload,
     PushUnsubscribePayload,
     PushVapidPublicKeyResponse,
     SlashCommandsResponse,
     SkillsResponse,
     SpawnResponse,
+    UpdateProjectRequest,
     UploadFileResponse,
     VisibilityPayload,
     SessionResponse,
@@ -419,5 +423,45 @@ export class ApiClient {
             method: 'POST',
             body: JSON.stringify(options || {})
         })
+    }
+
+    // Project methods
+    async getProjects(): Promise<ProjectsResponse> {
+        return await this.request<ProjectsResponse>('/api/projects')
+    }
+
+    async createProject(data: CreateProjectRequest): Promise<ProjectResponse> {
+        return await this.request<ProjectResponse>('/api/projects', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        })
+    }
+
+    async getProject(projectId: string): Promise<ProjectResponse> {
+        return await this.request<ProjectResponse>(`/api/projects/${encodeURIComponent(projectId)}`)
+    }
+
+    async updateProject(projectId: string, data: UpdateProjectRequest): Promise<ProjectResponse> {
+        return await this.request<ProjectResponse>(`/api/projects/${encodeURIComponent(projectId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        })
+    }
+
+    async deleteProject(projectId: string): Promise<void> {
+        await this.request(`/api/projects/${encodeURIComponent(projectId)}`, {
+            method: 'DELETE'
+        })
+    }
+
+    async listProjectDirectory(projectId: string, path?: string): Promise<ListDirectoryResponse> {
+        const params = new URLSearchParams()
+        if (path) {
+            params.set('path', path)
+        }
+        const qs = params.toString()
+        return await this.request<ListDirectoryResponse>(
+            `/api/projects/${encodeURIComponent(projectId)}/directory${qs ? `?${qs}` : ''}`
+        )
     }
 }

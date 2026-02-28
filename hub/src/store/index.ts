@@ -4,31 +4,39 @@ import { dirname } from 'node:path'
 
 import { MachineStore } from './machineStore'
 import { MessageStore } from './messageStore'
+import { ProjectStore } from './projectStore'
 import { PushStore } from './pushStore'
+import { SessionAliasStore } from './sessionAliasStore'
 import { SessionStore } from './sessionStore'
 import { UserStore } from './userStore'
 
 export type {
     StoredMachine,
     StoredMessage,
+    StoredProject,
     StoredPushSubscription,
     StoredSession,
+    StoredSessionAlias,
     StoredUser,
     VersionedUpdateResult
 } from './types'
 export { MachineStore } from './machineStore'
 export { MessageStore } from './messageStore'
+export { ProjectStore } from './projectStore'
 export { PushStore } from './pushStore'
+export { SessionAliasStore } from './sessionAliasStore'
 export { SessionStore } from './sessionStore'
 export { UserStore } from './userStore'
 
-const SCHEMA_VERSION: number = 3
+const SCHEMA_VERSION: number = 7
 const REQUIRED_TABLES = [
     'sessions',
     'machines',
     'messages',
     'users',
-    'push_subscriptions'
+    'push_subscriptions',
+    'session_aliases',
+    'projects'
 ] as const
 
 export class Store {
@@ -40,6 +48,8 @@ export class Store {
     readonly messages: MessageStore
     readonly users: UserStore
     readonly push: PushStore
+    readonly sessionAliases: SessionAliasStore
+    readonly projects: ProjectStore
 
     constructor(dbPath: string) {
         this.dbPath = dbPath
@@ -81,6 +91,8 @@ export class Store {
         this.messages = new MessageStore(this.db)
         this.users = new UserStore(this.db)
         this.push = new PushStore(this.db)
+        this.sessionAliases = new SessionAliasStore(this.db)
+        this.projects = new ProjectStore(this.db)
     }
 
     private initSchema(): void {
@@ -106,6 +118,49 @@ export class Store {
 
         if (currentVersion === 2 && SCHEMA_VERSION === 3) {
             this.migrateFromV2ToV3()
+            this.setUserVersion(SCHEMA_VERSION)
+            return
+        }
+
+        if (currentVersion === 3 && SCHEMA_VERSION === 4) {
+            this.migrateFromV3ToV4()
+            this.setUserVersion(SCHEMA_VERSION)
+            return
+        }
+
+        // 支持 V3 -> V5 的直接迁移（先 V3->V4，再 V4->V5）
+        if (currentVersion === 3 && SCHEMA_VERSION >= 4) {
+            this.migrateFromV3ToV4()
+            this.setUserVersion(4)
+            // 继续执行后续迁移
+        }
+
+        if (currentVersion === 4 || (currentVersion === 3 && SCHEMA_VERSION >= 5)) {
+            if (SCHEMA_VERSION >= 5) {
+                this.migrateFromV4ToV5()
+                this.setUserVersion(5)
+                // 继续执行后续迁移
+            }
+        }
+
+        // 支持 V4/V5 -> V6 的迁移
+        if (currentVersion === 5 || currentVersion === 4) {
+            if (currentVersion === 4) {
+                this.migrateFromV4ToV5()
+            }
+            if (SCHEMA_VERSION >= 6) {
+                this.migrateFromV5ToV6()
+                if (SCHEMA_VERSION === 6) {
+                    this.setUserVersion(6)
+                    return
+                }
+                // 继续执行后续迁移
+            }
+        }
+
+        // 支持 V6 -> V7 的迁移
+        if (currentVersion === 6 && SCHEMA_VERSION >= 7) {
+            this.migrateFromV6ToV7()
             this.setUserVersion(SCHEMA_VERSION)
             return
         }
@@ -187,6 +242,26 @@ export class Store {
                 UNIQUE(namespace, endpoint)
             );
             CREATE INDEX IF NOT EXISTS idx_push_subscriptions_namespace ON push_subscriptions(namespace);
+
+            CREATE TABLE IF NOT EXISTS session_aliases (
+                old_session_id TEXT PRIMARY KEY,
+                new_session_id TEXT NOT NULL,
+                namespace TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_session_aliases_new_session_id ON session_aliases(new_session_id);
+            CREATE INDEX IF NOT EXISTS idx_session_aliases_namespace ON session_aliases(namespace);
+
+            CREATE TABLE IF NOT EXISTS projects (
+                id TEXT PRIMARY KEY,
+                namespace TEXT NOT NULL DEFAULT 'default',
+                name TEXT NOT NULL,
+                path TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_projects_namespace ON projects(namespace);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_projects_path_namespace ON projects(path, namespace);
         `)
     }
 
@@ -278,6 +353,57 @@ export class Store {
 
     private migrateFromV2ToV3(): void {
         return
+    }
+
+    private migrateFromV3ToV4(): void {
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS session_aliases (
+                old_session_id TEXT PRIMARY KEY,
+                new_session_id TEXT NOT NULL,
+                namespace TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_session_aliases_new_session_id ON session_aliases(new_session_id);
+            CREATE INDEX IF NOT EXISTS idx_session_aliases_namespace ON session_aliases(namespace);
+        `)
+    }
+
+    private migrateFromV4ToV5(): void {
+        // V5 adds session_aliases to REQUIRED_TABLES and creates the table in createSchema
+        // This migration ensures the table exists for existing databases
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS session_aliases (
+                old_session_id TEXT PRIMARY KEY,
+                new_session_id TEXT NOT NULL,
+                namespace TEXT NOT NULL,
+                created_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_session_aliases_new_session_id ON session_aliases(new_session_id);
+            CREATE INDEX IF NOT EXISTS idx_session_aliases_namespace ON session_aliases(namespace);
+        `)
+    }
+
+    private migrateFromV5ToV6(): void {
+        // V6 adds projects table for project management
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS projects (
+                id TEXT PRIMARY KEY,
+                namespace TEXT NOT NULL DEFAULT 'default',
+                name TEXT NOT NULL,
+                path TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_projects_namespace ON projects(namespace);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_projects_path_namespace ON projects(path, namespace);
+        `)
+    }
+
+    private migrateFromV6ToV7(): void {
+        // V7 adds tags column to projects table
+        this.db.exec(`
+            ALTER TABLE projects ADD COLUMN tags TEXT DEFAULT '[]'
+        `)
     }
 
     private getMachineColumnNames(): Set<string> {

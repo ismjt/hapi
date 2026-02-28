@@ -194,6 +194,64 @@ function SendIcon() {
     )
 }
 
+function ClearIcon() {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        </svg>
+    )
+}
+
+function SaveIcon() {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+        </svg>
+    )
+}
+
+function HistoryIcon() {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+        </svg>
+    )
+}
+
 function StopIcon() {
     return (
         <svg
@@ -318,6 +376,13 @@ export function ComposerButtons(props: {
     onVoiceToggle: () => void
     onVoiceMicToggle?: () => void
     onSend: () => void
+    // 清除功能
+    hasText: boolean
+    onClear: () => void
+    // 保存输入功能
+    onSaveInput: () => void
+    onShowSavedInputs: () => void
+    savedInputsCount: number
 }) {
     const { t } = useTranslation()
     const isVoiceConnected = props.voiceStatus === 'connected'
@@ -333,6 +398,48 @@ export function ComposerButtons(props: {
                 >
                     <AttachmentIcon />
                 </ComposerPrimitive.AddAttachment>
+
+                {/* 保存输入按钮 */}
+                {props.hasText ? (
+                    <button
+                        type="button"
+                        aria-label={t('composer.saveInput')}
+                        title={t('composer.saveInput')}
+                        disabled={props.controlsDisabled}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--app-fg)]/60 transition-colors hover:bg-[var(--app-bg)] hover:text-[var(--app-link)] disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={props.onSaveInput}
+                    >
+                        <SaveIcon />
+                    </button>
+                ) : null}
+
+                {/* 已保存输入按钮 */}
+                {props.savedInputsCount > 0 ? (
+                    <button
+                        type="button"
+                        aria-label={t('composer.savedInputs')}
+                        title={t('composer.savedInputs')}
+                        disabled={props.controlsDisabled}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--app-fg)]/60 transition-colors hover:bg-[var(--app-bg)] hover:text-[var(--app-fg)] disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={props.onShowSavedInputs}
+                    >
+                        <HistoryIcon />
+                    </button>
+                ) : null}
+
+                {/* 清除按钮 */}
+                {props.hasText ? (
+                    <button
+                        type="button"
+                        aria-label={t('composer.clear')}
+                        title={t('composer.clear')}
+                        disabled={props.controlsDisabled}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--app-fg)]/60 transition-colors hover:bg-[var(--app-bg)] hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        onClick={props.onClear}
+                    >
+                        <ClearIcon />
+                    </button>
+                ) : null}
 
                 {props.showSettingsButton ? (
                     <button

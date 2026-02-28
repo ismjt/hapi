@@ -204,6 +204,13 @@ export default {
   'composer.send': '发送',
   'composer.stop': '停止',
   'composer.voice': '语音助手',
+  'composer.clear': '清除输入',
+  'composer.saveInput': '保存输入',
+  'composer.savedInputs': '已保存的输入',
+  'composer.noSavedInputs': '暂无保存的输入',
+  'composer.fillInput': '回填',
+  'composer.deleteInput': '删除',
+  'composer.saved': '已保存',
 
   // Voice assistant
   'voice.connecting': '连接中...',
@@ -271,4 +278,20 @@ export default {
   'misc.permissionRequired': '需要权限',
   'misc.percentLeft': '剩余 {percent}%',
   'misc.online': '在线',
+
+  // Projects
+  'projects.title': '项目信息',
+  'projects.name': '项目名称',
+  'projects.namePlaceholder': '我的项目',
+  'projects.path': '项目路径',
+  'projects.tags': '标签',
+  'projects.tagsPlaceholder': '输入标签后按回车添加',
+  'projects.tagsHint': '最多10个标签，每个标签50字符以内',
+  'projects.empty': '暂无项目。创建一个开始使用。',
+  'projects.create.title': '创建项目',
+  'projects.create.submit': '创建',
+  'projects.edit.title': '编辑项目',
+  'projects.delete.title': '删除项目',
+  'projects.delete.description': '确定要删除 "{name}" 吗？此操作无法撤销。',
+  'projects.directory.empty': '此目录为空。',
 } as const

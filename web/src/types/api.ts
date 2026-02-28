@@ -197,3 +197,17 @@ export type VisibilityPayload = {
 }
 
 export type SyncEvent = ProtocolSyncEvent
+
+export type Project = {
+    id: string
+    name: string
+    path: string
+    tags: string[]
+    createdAt: number
+    updatedAt: number
+}
+
+export type ProjectsResponse = { projects: Project[] }
+export type ProjectResponse = { project: Project }
+export type CreateProjectRequest = { name: string; path: string; tags?: string[] }
+export type UpdateProjectRequest = { name: string; path: string; tags?: string[] }

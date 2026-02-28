@@ -17,6 +17,8 @@ import type { Suggestion } from '@/hooks/useActiveSuggestions'
 import type { ConversationStatus } from '@/realtime/types'
 import { useActiveWord } from '@/hooks/useActiveWord'
 import { useActiveSuggestions } from '@/hooks/useActiveSuggestions'
+import { useComposerDraft } from '@/hooks/useComposerDraft'
+import { useSavedInputs } from '@/hooks/useSavedInputs'
 import { applySuggestion } from '@/utils/applySuggestion'
 import { usePlatform } from '@/hooks/usePlatform'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
@@ -27,6 +29,7 @@ import { Autocomplete } from '@/components/ChatInput/Autocomplete'
 import { StatusBar } from '@/components/AssistantChat/StatusBar'
 import { ComposerButtons } from '@/components/AssistantChat/ComposerButtons'
 import { AttachmentItem } from '@/components/AssistantChat/AttachmentItem'
+import { SavedInputsOverlay } from '@/components/AssistantChat/SavedInputsOverlay'
 import { useTranslation } from '@/lib/use-translation'
 
 export interface TextInputState {
@@ -47,6 +50,7 @@ export function HappyComposer(props: {
     contextSize?: number
     controlledByUser?: boolean
     agentFlavor?: string | null
+    sessionId?: string | null
     onPermissionModeChange?: (mode: PermissionMode) => void
     onModelModeChange?: (mode: ModelMode) => void
     onSwitchToRemote?: () => void
@@ -71,6 +75,7 @@ export function HappyComposer(props: {
         contextSize,
         controlledByUser = false,
         agentFlavor,
+        sessionId = null,
         onPermissionModeChange,
         onModelModeChange,
         onSwitchToRemote,
@@ -109,14 +114,38 @@ export function HappyComposer(props: {
     })
     const canSend = (hasText || hasAttachments) && attachmentsReady && !controlsDisabled && !threadIsRunning
 
+    // 草稿自动保存
+    const { draft, saveDraft, clearDraft } = useComposerDraft(sessionId)
+    const hasRestoredDraft = useRef(false)
+
+    // 恢复草稿
+    useEffect(() => {
+        if (draft && !hasRestoredDraft.current && !composerText) {
+            hasRestoredDraft.current = true
+            api.composer().setText(draft)
+        }
+    }, [draft, composerText, api])
+
+    // 自动保存草稿
+    useEffect(() => {
+        if (composerText) {
+            saveDraft(composerText)
+        }
+    }, [composerText, saveDraft])
+
     const [inputState, setInputState] = useState<TextInputState>({
         text: '',
         selection: { start: 0, end: 0 }
     })
     const [showSettings, setShowSettings] = useState(false)
+    const [showSavedInputs, setShowSavedInputs] = useState(false)
     const [isAborting, setIsAborting] = useState(false)
     const [isSwitching, setIsSwitching] = useState(false)
     const [showContinueHint, setShowContinueHint] = useState(false)
+    const [saveSuccess, setSaveSuccess] = useState(false)
+
+    // 保存输入功能
+    const { savedInputs, saveInput, deleteInput } = useSavedInputs()
 
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const prevControlledByUser = useRef(controlledByUser)
@@ -405,7 +434,37 @@ export function HappyComposer(props: {
 
     const handleSend = useCallback(() => {
         api.composer().send()
-    }, [api])
+        clearDraft()
+    }, [api, clearDraft])
+
+    // 清除输入框和草稿
+    const handleClear = useCallback(() => {
+        api.composer().setText('')
+        clearDraft()
+        haptic('light')
+    }, [api, clearDraft, haptic])
+
+    // 保存当前输入
+    const handleSaveInput = useCallback(() => {
+        const success = saveInput(composerText)
+        if (success) {
+            haptic('success')
+            setSaveSuccess(true)
+            setTimeout(() => setSaveSuccess(false), 1500)
+        }
+    }, [composerText, saveInput, haptic])
+
+    // 回填输入
+    const handleFillInput = useCallback((text: string) => {
+        api.composer().setText(text)
+        haptic('light')
+    }, [api, haptic])
+
+    // 删除已保存输入
+    const handleDeleteSavedInput = useCallback((id: string) => {
+        deleteInput(id)
+        haptic('light')
+    }, [deleteInput, haptic])
 
     const overlays = useMemo(() => {
         if (showSettings && (showPermissionSettings || showModelSettings)) {
@@ -508,6 +567,18 @@ export function HappyComposer(props: {
             )
         }
 
+        // 已保存输入浮层
+        if (showSavedInputs) {
+            return (
+                <SavedInputsOverlay
+                    inputs={savedInputs}
+                    onSelect={handleFillInput}
+                    onDelete={handleDeleteSavedInput}
+                    onClose={() => setShowSavedInputs(false)}
+                />
+            )
+        }
+
         return null
     }, [
         showSettings,
@@ -515,13 +586,17 @@ export function HappyComposer(props: {
         showModelSettings,
         suggestions,
         selectedIndex,
+        showSavedInputs,
+        savedInputs,
         controlsDisabled,
         permissionMode,
         modelMode,
         permissionModeOptions,
         handlePermissionChange,
         handleModelChange,
-        handleSuggestionSelect
+        handleSuggestionSelect,
+        handleFillInput,
+        handleDeleteSavedInput
     ])
 
     return (
@@ -587,6 +662,11 @@ export function HappyComposer(props: {
                             onVoiceToggle={onVoiceToggle ?? (() => {})}
                             onVoiceMicToggle={onVoiceMicToggle}
                             onSend={handleSend}
+                            hasText={hasText}
+                            onClear={handleClear}
+                            onSaveInput={handleSaveInput}
+                            onShowSavedInputs={() => setShowSavedInputs(prev => !prev)}
+                            savedInputsCount={savedInputs.length}
                         />
                     </div>
                 </ComposerPrimitive.Root>

@@ -60,3 +60,20 @@ export type VersionedUpdateResult<T> =
     | { result: 'success'; version: number; value: T }
     | { result: 'version-mismatch'; version: number; value: T }
     | { result: 'error' }
+
+export type StoredSessionAlias = {
+    oldSessionId: string
+    newSessionId: string
+    namespace: string
+    createdAt: number
+}
+
+export type StoredProject = {
+    id: string
+    namespace: string
+    name: string
+    path: string
+    tags: string[]
+    createdAt: number
+    updatedAt: number
+}

@@ -8,6 +8,7 @@ import {
     type CSSProperties
 } from 'react'
 import { useTranslation } from '@/lib/use-translation'
+import { hasWecomWebhook } from '@/hooks/useNotificationSettings'
 
 type SessionActionMenuProps = {
     isOpen: boolean
@@ -18,6 +19,10 @@ type SessionActionMenuProps = {
     onDelete: () => void
     anchorPoint: { x: number; y: number }
     menuId?: string
+    notificationEnabled?: boolean
+    onToggleNotification?: () => void
+    sessionWebhook?: string
+    onSessionWebhookChange?: (webhook: string) => void
 }
 
 function EditIcon(props: { className?: string }) {
@@ -84,6 +89,26 @@ function TrashIcon(props: { className?: string }) {
     )
 }
 
+function BellIcon(props: { className?: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={props.className}
+        >
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+        </svg>
+    )
+}
+
 type MenuPosition = {
     top: number
     left: number
@@ -100,13 +125,26 @@ export function SessionActionMenu(props: SessionActionMenuProps) {
         onArchive,
         onDelete,
         anchorPoint,
-        menuId
+        menuId,
+        notificationEnabled,
+        onToggleNotification,
+        sessionWebhook,
+        onSessionWebhookChange
     } = props
     const menuRef = useRef<HTMLDivElement | null>(null)
     const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null)
+    const [showWebhookInput, setShowWebhookInput] = useState(false)
+    const [webhookValue, setWebhookValue] = useState(sessionWebhook || '')
     const internalId = useId()
     const resolvedMenuId = menuId ?? `session-action-menu-${internalId}`
     const headingId = `${resolvedMenuId}-heading`
+
+    const hasGlobalWebhook = hasWecomWebhook()
+    const canEnableNotification = hasGlobalWebhook || (sessionWebhook && sessionWebhook.length > 0)
+
+    useEffect(() => {
+        setWebhookValue(sessionWebhook || '')
+    }, [sessionWebhook])
 
     const handleRename = () => {
         onClose()
@@ -121,6 +159,42 @@ export function SessionActionMenu(props: SessionActionMenuProps) {
     const handleDelete = () => {
         onClose()
         onDelete()
+    }
+
+    const handleToggleNotification = () => {
+        if (!canEnableNotification) {
+            return
+        }
+        if (onToggleNotification) {
+            onToggleNotification()
+        }
+        if (notificationEnabled) {
+            // 关闭通知时清空会话级 webhook
+            setShowWebhookInput(false)
+            if (onSessionWebhookChange) {
+                onSessionWebhookChange('')
+            }
+        }
+    }
+
+    const handleShowWebhookInput = () => {
+        setShowWebhookInput(true)
+    }
+
+    const handleWebhookChange = (value: string) => {
+        setWebhookValue(value)
+    }
+
+    const handleWebhookSave = () => {
+        if (onSessionWebhookChange) {
+            onSessionWebhookChange(webhookValue)
+        }
+        setShowWebhookInput(false)
+    }
+
+    const handleWebhookCancel = () => {
+        setWebhookValue(sessionWebhook || '')
+        setShowWebhookInput(false)
     }
 
     const updatePosition = useCallback(() => {
@@ -155,6 +229,7 @@ export function SessionActionMenu(props: SessionActionMenuProps) {
     useEffect(() => {
         if (!isOpen) {
             setMenuPosition(null)
+            setShowWebhookInput(false)
             return
         }
 
@@ -214,7 +289,7 @@ export function SessionActionMenu(props: SessionActionMenuProps) {
     return (
         <div
             ref={menuRef}
-            className="fixed z-50 min-w-[200px] rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-1 shadow-lg animate-menu-pop"
+            className="fixed z-50 min-w-[220px] rounded-lg border border-[var(--app-border)] bg-[var(--app-bg)] p-1 shadow-lg animate-menu-pop"
             style={menuStyle}
         >
             <div
@@ -229,6 +304,80 @@ export function SessionActionMenu(props: SessionActionMenuProps) {
                 aria-labelledby={headingId}
                 className="flex flex-col gap-1"
             >
+                {/* 通知订阅开关 */}
+                {onToggleNotification && (
+                    <>
+                        <div className="flex items-center justify-between px-3 py-2">
+                            <div className="flex items-center gap-3">
+                                <BellIcon className={`text-[var(--app-hint)] ${!canEnableNotification ? 'opacity-50' : ''}`} />
+                                <span className={`text-[var(--app-fg)] ${!canEnableNotification ? 'opacity-50' : ''}`}>
+                                    {t('session.notification.subscribe')}
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                role="switch"
+                                aria-checked={notificationEnabled}
+                                disabled={!canEnableNotification}
+                                onClick={handleToggleNotification}
+                                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-link)] ${
+                                    notificationEnabled ? 'bg-[#22c55e]' : 'bg-[var(--app-border)]'
+                                } ${!canEnableNotification ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            >
+                                <span
+                                    className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                        notificationEnabled ? 'translate-x-4' : 'translate-x-0'
+                                    }`}
+                                />
+                            </button>
+                        </div>
+                        {!canEnableNotification && (
+                            <p className="px-3 pb-2 text-xs text-[var(--app-hint)]">
+                                {t('session.notification.notConfigured')}
+                            </p>
+                        )}
+                        {notificationEnabled && !showWebhookInput && (
+                            <button
+                                type="button"
+                                role="menuitem"
+                                className={`${baseItemClassName} hover:bg-[var(--app-subtle-bg)] text-xs`}
+                                onClick={handleShowWebhookInput}
+                            >
+                                <span className="w-[18px]" />
+                                {sessionWebhook ? t('session.notification.editWebhook') : t('session.notification.setWebhook')}
+                            </button>
+                        )}
+                        {notificationEnabled && showWebhookInput && (
+                            <div className="flex flex-col gap-2 px-3 py-2">
+                                <input
+                                    type="url"
+                                    value={webhookValue}
+                                    onChange={(e) => handleWebhookChange(e.target.value)}
+                                    placeholder={t('settings.notification.wecomWebhookPlaceholder')}
+                                    className="w-full px-2 py-1 text-xs border border-[var(--app-border)] rounded bg-[var(--app-input-bg)] text-[var(--app-fg)] focus:outline-none focus:ring-1 focus:ring-[var(--app-primary)]"
+                                />
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleWebhookSave}
+                                        className="flex-1 px-2 py-1 text-xs bg-[var(--app-primary)] text-white rounded hover:opacity-90"
+                                    >
+                                        {t('button.save')}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleWebhookCancel}
+                                        className="flex-1 px-2 py-1 text-xs border border-[var(--app-border)] rounded hover:bg-[var(--app-subtle-bg)]"
+                                    >
+                                        {t('button.cancel')}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        <div className="my-1 border-t border-[var(--app-divider)]" />
+                    </>
+                )}
+
                 <button
                     type="button"
                     role="menuitem"

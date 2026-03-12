@@ -17,7 +17,6 @@ import type { Suggestion } from '@/hooks/useActiveSuggestions'
 import type { ConversationStatus } from '@/realtime/types'
 import { useActiveWord } from '@/hooks/useActiveWord'
 import { useActiveSuggestions } from '@/hooks/useActiveSuggestions'
-import { useComposerDraft } from '@/hooks/useComposerDraft'
 import { useSavedInputs } from '@/hooks/useSavedInputs'
 import { applySuggestion } from '@/utils/applySuggestion'
 import { usePlatform } from '@/hooks/usePlatform'
@@ -114,25 +113,6 @@ export function HappyComposer(props: {
     })
     const canSend = (hasText || hasAttachments) && attachmentsReady && !controlsDisabled && !threadIsRunning
 
-    // 草稿自动保存
-    const { draft, saveDraft, clearDraft } = useComposerDraft(sessionId)
-    const hasRestoredDraft = useRef(false)
-
-    // 恢复草稿
-    useEffect(() => {
-        if (draft && !hasRestoredDraft.current && !composerText) {
-            hasRestoredDraft.current = true
-            api.composer().setText(draft)
-        }
-    }, [draft, composerText, api])
-
-    // 自动保存草稿
-    useEffect(() => {
-        if (composerText) {
-            saveDraft(composerText)
-        }
-    }, [composerText, saveDraft])
-
     const [inputState, setInputState] = useState<TextInputState>({
         text: '',
         selection: { start: 0, end: 0 }
@@ -143,9 +123,15 @@ export function HappyComposer(props: {
     const [isSwitching, setIsSwitching] = useState(false)
     const [showContinueHint, setShowContinueHint] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState(false)
+    // 引用内容独立状态
+    const [quotedText, setQuotedText] = useState<string>('')
+    const pendingClearText = useRef<string | null>(null)
+    const clearedDuringSend = useRef(false)
+    // 标记是否需要在发送后清除输入框（独立于 pendingClearText）
+    const shouldClearAfterSend = useRef(false)
 
-    // 保存输入功能
-    const { savedInputs, saveInput, deleteInput } = useSavedInputs()
+    // 保存输入功能（与当前会话关联）
+    const { savedInputs, saveInput, deleteInput } = useSavedInputs(sessionId)
 
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const prevControlledByUser = useRef(controlledByUser)
@@ -160,6 +146,27 @@ export function HappyComposer(props: {
         })
     }, [composerText])
 
+    // 监听引用消息的自定义事件 - 只更新引用状态，不插入输入框
+    useEffect(() => {
+        const handleQuoteMessage = (event: Event) => {
+            const customEvent = event as CustomEvent<{ text: string }>
+            const quoteText = customEvent.detail?.text
+            if (quoteText) {
+                setQuotedText(quoteText)
+            }
+        }
+
+        window.addEventListener('hapi:quote-message', handleQuoteMessage)
+        return () => {
+            window.removeEventListener('hapi:quote-message', handleQuoteMessage)
+        }
+    }, [])
+
+    // 清除引用内容
+    const clearQuotedText = useCallback(() => {
+        setQuotedText('')
+    }, [])
+
     // Track one-time "continue" hint after switching from local to remote.
     useEffect(() => {
         if (prevControlledByUser.current === true && controlledByUser === false) {
@@ -170,6 +177,22 @@ export function HappyComposer(props: {
         }
         prevControlledByUser.current = controlledByUser
     }, [controlledByUser])
+
+    // 监听 threadIsRunning 状态变化，在发送完成后清除输入框
+    const prevThreadIsRunning = useRef(threadIsRunning)
+    useEffect(() => {
+        // 检测从发送中 (true) 到空闲 (false) 的状态变化
+        if (prevThreadIsRunning.current === true && threadIsRunning === false) {
+            if (shouldClearAfterSend.current || pendingClearText.current) {
+                // 消息发送完成，清除输入框
+                api.composer().setText('')
+                // 重置标记
+                shouldClearAfterSend.current = false
+                pendingClearText.current = null
+            }
+        }
+        prevThreadIsRunning.current = threadIsRunning
+    }, [threadIsRunning, api])
 
     const { haptic: platformHaptic, isTouch } = usePlatform()
     const { isStandalone, isIOS } = usePWAInstall()
@@ -433,16 +456,51 @@ export function HappyComposer(props: {
     const voiceEnabled = Boolean(onVoiceToggle)
 
     const handleSend = useCallback(() => {
-        api.composer().send()
-        clearDraft()
-    }, [api, clearDraft])
+        if (quotedText) {
+            // 如果有引用内容，构建完整消息
+            const quotedLines = quotedText.split('\n').map(line => `> ${line}`).join('\n')
+            const finalText = quotedLines + '\n\n' + composerText
+            // 设置完整消息到 composer
+            api.composer().setText(finalText)
+            // 标记需要清除输入框，但不需要恢复内容
+            shouldClearAfterSend.current = true
+            pendingClearText.current = null
+            // 发送
+            api.composer().send()
+            // 清除引用状态
+            setQuotedText('')
+        } else {
+            // 没有引用，正常发送（保持原有的清除逻辑）
+            pendingClearText.current = composerText
+            api.composer().send()
+        }
+    }, [api, composerText, quotedText])
 
-    // 清除输入框和草稿
+    // 监听 composerText 变化，如果发送后有 pendingClearText 则恢复内容
+    // 仅在发送过程中 (threadIsRunning 为 true) 且文本被意外清除时恢复
+    useEffect(() => {
+        if (!pendingClearText.current) return
+
+        // 如果正在发送中且内容变为空，说明被意外清除，需要恢复
+        if (threadIsRunning && composerText === '' && !clearedDuringSend.current) {
+            clearedDuringSend.current = true
+            api.composer().setText(pendingClearText.current)
+        }
+
+        // 发送完成后 (从 true 变为 false)，清除 pendingClearText 和 clearedDuringSend
+        if (!threadIsRunning && pendingClearText.current) {
+            pendingClearText.current = null
+            clearedDuringSend.current = false
+        }
+    }, [composerText, api, threadIsRunning])
+
+    // 清除输入框
     const handleClear = useCallback(() => {
+        // 用户主动清除，清除 pendingClearText 标记，防止内容被恢复
+        pendingClearText.current = null
         api.composer().setText('')
-        clearDraft()
         haptic('light')
-    }, [api, clearDraft, haptic])
+    }, [api, haptic])
 
     // 保存当前输入
     const handleSaveInput = useCallback(() => {
@@ -623,6 +681,38 @@ export function HappyComposer(props: {
                             </div>
                         ) : null}
 
+                        {/* 引用内容显示区域 - 独立于输入框 */}
+                        {quotedText && (
+                            <div className="mx-4 mt-3 flex items-start gap-2 rounded-lg border-l-4 border-[var(--app-link)] bg-[var(--app-bg)]/50 px-3 py-2">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                    className="mt-0.5 text-[var(--app-link)] shrink-0"
+                                >
+                                    <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
+                                    <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
+                                </svg>
+                                <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-medium text-[var(--app-link)] mb-1">
+                                        {t('composer.quotedText')}
+                                    </div>
+                                    <div className="text-sm text-[var(--app-hint)] line-clamp-3 break-words">
+                                        {quotedText}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={clearQuotedText}
+                                        className="rm-quote-btn mt-1 text-xs text-[var(--app-hint)] hover:text-red-500 transition-colors"
+                                    >
+                                        × 移除引用
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="flex items-center px-4 py-3">
                             <ComposerPrimitive.Input
                                 ref={textareaRef}
@@ -667,6 +757,8 @@ export function HappyComposer(props: {
                             onSaveInput={handleSaveInput}
                             onShowSavedInputs={() => setShowSavedInputs(prev => !prev)}
                             savedInputsCount={savedInputs.length}
+                            savedInputsOpen={showSavedInputs}
+                            settingsOpen={showSettings}
                         />
                     </div>
                 </ComposerPrimitive.Root>

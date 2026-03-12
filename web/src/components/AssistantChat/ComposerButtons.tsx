@@ -383,9 +383,13 @@ export function ComposerButtons(props: {
     onSaveInput: () => void
     onShowSavedInputs: () => void
     savedInputsCount: number
+    savedInputsOpen?: boolean
+    settingsOpen?: boolean
 }) {
     const { t } = useTranslation()
     const isVoiceConnected = props.voiceStatus === 'connected'
+    const savedInputsOpen = props.savedInputsOpen ?? false
+    const settingsOpen = props.settingsOpen ?? false
 
     return (
         <div className="flex items-center justify-between px-2 pb-2">
@@ -414,18 +418,20 @@ export function ComposerButtons(props: {
                 ) : null}
 
                 {/* 已保存输入按钮 */}
-                {props.savedInputsCount > 0 ? (
-                    <button
-                        type="button"
-                        aria-label={t('composer.savedInputs')}
-                        title={t('composer.savedInputs')}
-                        disabled={props.controlsDisabled}
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--app-fg)]/60 transition-colors hover:bg-[var(--app-bg)] hover:text-[var(--app-fg)] disabled:cursor-not-allowed disabled:opacity-50"
-                        onClick={props.onShowSavedInputs}
-                    >
-                        <HistoryIcon />
-                    </button>
-                ) : null}
+                <button
+                    type="button"
+                    aria-label={t('composer.savedInputs')}
+                    title={t('composer.savedInputs')}
+                    disabled={props.controlsDisabled}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                        savedInputsOpen
+                            ? 'bg-blue-500 text-white'
+                            : 'text-[var(--app-fg)]/60 hover:bg-[var(--app-bg)] hover:text-[var(--app-fg)]'
+                    }`}
+                    onClick={props.onShowSavedInputs}
+                >
+                    <HistoryIcon />
+                </button>
 
                 {/* 清除按钮 */}
                 {props.hasText ? (
@@ -446,7 +452,11 @@ export function ComposerButtons(props: {
                         type="button"
                         aria-label={t('composer.settings')}
                         title={t('composer.settings')}
-                        className="settings-button flex h-8 w-8 items-center justify-center rounded-full text-[var(--app-fg)]/60 transition-colors hover:bg-[var(--app-bg)] hover:text-[var(--app-fg)]"
+                        className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                            settingsOpen
+                                ? 'bg-blue-500 text-white'
+                                : 'text-[var(--app-fg)]/60 hover:bg-[var(--app-bg)] hover:text-[var(--app-fg)]'
+                        }`}
                         onClick={props.onSettingsToggle}
                         disabled={props.controlsDisabled}
                     >

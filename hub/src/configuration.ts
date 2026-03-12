@@ -33,6 +33,7 @@ export type ConfigSource = 'env' | 'file' | 'default'
 export interface ConfigSources {
     telegramBotToken: ConfigSource
     telegramNotification: ConfigSource
+    wecomWebhook: ConfigSource
     listenHost: ConfigSource
     listenPort: ConfigSource
     publicUrl: ConfigSource
@@ -49,6 +50,12 @@ class Configuration {
 
     /** Telegram notifications enabled */
     public readonly telegramNotification: boolean
+
+    /** Wecom Webhook URL */
+    public readonly wecomWebhook: string | null
+
+    /** Wecom Webhook enabled status */
+    public readonly wecomWebhookEnabled: boolean
 
     /** CLI auth token (shared secret) */
     public cliApiToken: string
@@ -98,6 +105,8 @@ class Configuration {
         this.telegramBotToken = serverSettings.telegramBotToken
         this.telegramEnabled = Boolean(this.telegramBotToken)
         this.telegramNotification = serverSettings.telegramNotification
+        this.wecomWebhook = serverSettings.wecomWebhook
+        this.wecomWebhookEnabled = Boolean(this.wecomWebhook)
         this.listenHost = serverSettings.listenHost
         this.listenPort = serverSettings.listenPort
         this.publicUrl = serverSettings.publicUrl

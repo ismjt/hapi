@@ -32,6 +32,7 @@ class FakeSyncEngine {
 class StubChannel implements NotificationChannel {
     readonly readySessions: Session[] = []
     readonly permissionSessions: Session[] = []
+    readonly endSessions: Session[] = []
 
     async sendReady(session: Session): Promise<void> {
         this.readySessions.push(session)
@@ -39,6 +40,10 @@ class StubChannel implements NotificationChannel {
 
     async sendPermissionRequest(session: Session): Promise<void> {
         this.permissionSessions.push(session)
+    }
+
+    async sendEnd(session: Session): Promise<void> {
+        this.endSessions.push(session)
     }
 }
 

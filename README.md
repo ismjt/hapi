@@ -41,6 +41,20 @@ For self-hosted options (Cloudflare Tunnel, Tailscale), see [Installation](docs/
 - [Why HAPI](docs/guide/why-hapi.md)
 - [FAQ](docs/guide/faq.md)
 
+## Dev
+
+```bash
+# Start both hub and web in development mode
+bun run dev
+```
+
+```bash
+# Or start individually
+bun run dev:hub    # Start hub server
+bun run dev:web    # Start web frontend
+```
+
+
 ## Build from source
 
 ```bash

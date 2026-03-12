@@ -356,7 +356,7 @@ export default function ProjectsPage() {
     const [deletingProject, setDeletingProject] = useState<Project | null>(null)
 
     // 检测是否在子路由中
-    const isOnSubRoute = matchRoute({ to: '/projects/$projectId/directory' })
+    const isOnSubRoute = matchRoute({ to: '/projects/$projectId' })
 
     const handleCreate = useCallback(async (data: ProjectFormData) => {
         try {

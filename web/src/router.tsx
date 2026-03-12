@@ -35,6 +35,7 @@ import FilePage from '@/routes/sessions/file'
 import TerminalPage from '@/routes/sessions/terminal'
 import SettingsPage from '@/routes/settings'
 import ProjectsPage from '@/routes/projects'
+import ProjectInfoPage from '@/routes/projects/$projectId'
 import ProjectDirectoryPage from '@/routes/projects/$projectId/directory'
 
 function BackIcon(props: { className?: string }) {
@@ -517,9 +518,15 @@ const projectsRoute = createRoute({
     component: ProjectsPage,
 })
 
-const projectDirectoryRoute = createRoute({
+const projectInfoRoute = createRoute({
     getParentRoute: () => projectsRoute,
-    path: '$projectId/directory',
+    path: '$projectId',
+    component: ProjectInfoPage,
+})
+
+const projectDirectoryRoute = createRoute({
+    getParentRoute: () => projectInfoRoute,
+    path: 'directory',
     component: ProjectDirectoryPage,
 })
 
@@ -536,7 +543,9 @@ export const routeTree = rootRoute.addChildren([
     ]),
     settingsRoute,
     projectsRoute.addChildren([
-        projectDirectoryRoute,
+        projectInfoRoute.addChildren([
+            projectDirectoryRoute,
+        ]),
     ]),
 ])
 

@@ -3,6 +3,7 @@ import type { Session } from '@/types/api'
 import type { ApiClient } from '@/api/client'
 import { isTelegramApp } from '@/hooks/useTelegram'
 import { useSessionActions } from '@/hooks/mutations/useSessionActions'
+import { useNotificationSettings } from '@/hooks/useNotificationSettings'
 import { SessionActionMenu } from '@/components/SessionActionMenu'
 import { RenameSessionDialog } from '@/components/RenameSessionDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -84,6 +85,14 @@ export function SessionHeader(props: {
         session.id,
         session.metadata?.flavor ?? null
     )
+
+    // 通知设置
+    const {
+        settings: notificationSettings,
+        canEnableNotification,
+        toggleEnabled: toggleNotification,
+        setWebhook: setSessionWebhook
+    } = useNotificationSettings(api, session.id)
 
     const handleDelete = async () => {
         await deleteSession()
@@ -183,6 +192,10 @@ export function SessionHeader(props: {
                 onDelete={() => setDeleteOpen(true)}
                 anchorPoint={menuAnchorPoint}
                 menuId={menuId}
+                notificationEnabled={notificationSettings.enabled}
+                onToggleNotification={toggleNotification}
+                sessionWebhook={notificationSettings.wecomWebhook ?? ''}
+                onSessionWebhookChange={setSessionWebhook}
             />
 
             <RenameSessionDialog

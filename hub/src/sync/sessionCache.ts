@@ -358,6 +358,57 @@ export class SessionCache {
         this.refreshSession(newSessionId)
     }
 
+    /**
+     * 更新会话的通知设置
+     */
+    async updateNotificationSettings(
+        sessionId: string,
+        settings: {
+            enabled?: boolean
+            wecomWebhook?: string | null
+        }
+    ): Promise<void> {
+        const session = this.sessions.get(sessionId)
+        if (!session) {
+            throw new Error('Session not found')
+        }
+
+        const currentMetadata = session.metadata ?? { path: '', host: '' }
+        const currentNotification = (currentMetadata as Record<string, unknown>).notification as {
+            enabled?: boolean
+            wecomWebhook?: string | null
+        } | undefined ?? {}
+
+        const newNotification = {
+            ...currentNotification,
+            ...(settings.enabled !== undefined && { enabled: settings.enabled }),
+            ...(settings.wecomWebhook !== undefined && { wecomWebhook: settings.wecomWebhook })
+        }
+
+        const newMetadata = {
+            ...currentMetadata,
+            notification: newNotification
+        }
+
+        const result = this.store.sessions.updateSessionMetadata(
+            sessionId,
+            newMetadata,
+            session.metadataVersion,
+            session.namespace,
+            { touchUpdatedAt: false }
+        )
+
+        if (result.result === 'error') {
+            throw new Error('Failed to update notification settings')
+        }
+
+        if (result.result === 'version-mismatch') {
+            throw new Error('Session was modified concurrently. Please try again.')
+        }
+
+        this.refreshSession(sessionId)
+    }
+
     private mergeSessionMetadata(oldMetadata: unknown | null, newMetadata: unknown | null): unknown | null {
         if (!oldMetadata || typeof oldMetadata !== 'object') {
             return newMetadata

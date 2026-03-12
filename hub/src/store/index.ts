@@ -36,7 +36,8 @@ const REQUIRED_TABLES = [
     'users',
     'push_subscriptions',
     'session_aliases',
-    'projects'
+    'projects',
+    'notification_settings'
 ] as const
 
 export class Store {
@@ -165,6 +166,13 @@ export class Store {
             return
         }
 
+        // 支持 V7 -> V8 的迁移
+        if (currentVersion === 7 && SCHEMA_VERSION >= 8) {
+            this.migrateFromV7ToV8()
+            this.setUserVersion(SCHEMA_VERSION)
+            return
+        }
+
         // 支持 V8 -> V9 的迁移
         if (currentVersion === 8 && SCHEMA_VERSION >= 9) {
             this.migrateFromV8ToV9()
@@ -271,6 +279,13 @@ export class Store {
             );
             CREATE INDEX IF NOT EXISTS idx_projects_namespace ON projects(namespace);
             CREATE UNIQUE INDEX IF NOT EXISTS idx_projects_path_namespace ON projects(path, namespace);
+
+            CREATE TABLE IF NOT EXISTS notification_settings (
+                namespace TEXT PRIMARY KEY,
+                wecom_webhook TEXT,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            );
         `)
     }
 
@@ -412,6 +427,18 @@ export class Store {
         // V7 adds tags column to projects table
         this.db.exec(`
             ALTER TABLE projects ADD COLUMN tags TEXT DEFAULT '[]'
+        `)
+    }
+
+    private migrateFromV7ToV8(): void {
+        // V8 adds notification_settings table
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS notification_settings (
+                namespace TEXT PRIMARY KEY,
+                wecom_webhook TEXT,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL
+            )
         `)
     }
 

@@ -62,6 +62,18 @@ export class NotificationHub {
                 })
             }
         }
+
+        if (event.type === 'session-updated' && event.sessionId) {
+            const session = this.syncEngine.getSession(event.sessionId)
+            const dataActive = event.data && typeof event.data === 'object' && 'active' in event.data
+                ? (event.data as { active?: boolean }).active
+                : undefined
+            if (session && !session.active && dataActive === false) {
+                this.sendEndNotification(event.sessionId).catch((error) => {
+                    console.error('[NotificationHub] Failed to send end notification:', error)
+                })
+            }
+        }
     }
 
     private clearSessionState(sessionId: string): void {
@@ -162,6 +174,25 @@ export class NotificationHub {
                 await channel.sendPermissionRequest(session)
             } catch (error) {
                 console.error('[NotificationHub] Failed to send permission notification:', error)
+            }
+        }
+    }
+
+    private async sendEndNotification(sessionId: string): Promise<void> {
+        const session = this.syncEngine.getSession(sessionId)
+        if (!session) {
+            return
+        }
+
+        await this.notifyEnd(session)
+    }
+
+    private async notifyEnd(session: Session): Promise<void> {
+        for (const channel of this.channels) {
+            try {
+                await channel.sendEnd(session)
+            } catch (error) {
+                console.error('[NotificationHub] Failed to send end notification:', error)
             }
         }
     }

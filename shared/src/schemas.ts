@@ -19,6 +19,11 @@ export const WorktreeMetadataSchema = z.object({
 
 export type WorktreeMetadata = z.infer<typeof WorktreeMetadataSchema>
 
+const NotificationSettingsSchema = z.object({
+    enabled: z.boolean().optional(),
+    wecomWebhook: z.string().nullable().optional()
+})
+
 export const MetadataSchema = z.object({
     path: z.string(),
     host: z.string(),
@@ -46,7 +51,8 @@ export const MetadataSchema = z.object({
     archivedBy: z.string().optional(),
     archiveReason: z.string().optional(),
     flavor: z.string().nullish(),
-    worktree: WorktreeMetadataSchema.optional()
+    worktree: WorktreeMetadataSchema.optional(),
+    notification: NotificationSettingsSchema.optional()
 })
 
 export type Metadata = z.infer<typeof MetadataSchema>

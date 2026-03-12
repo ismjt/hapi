@@ -23,6 +23,7 @@ import { PushService } from './push/pushService'
 import { PushNotificationChannel } from './push/pushNotificationChannel'
 import { VisibilityTracker } from './visibility/visibilityTracker'
 import { TunnelManager } from './tunnel'
+import { WecomWebhookChannel } from './wecom/wecomWebhookChannel'
 import { waitForTunnelTlsReady } from './tunnel/tlsGate'
 import QRCode from 'qrcode'
 import type { Server as BunServer } from 'bun'
@@ -202,6 +203,15 @@ async function main() {
         }
     }
 
+    // Initialize Wecom Webhook channel (optional)
+    if (config.wecomWebhookEnabled) {
+        const wecomChannel = new WecomWebhookChannel(() => config.wecomWebhook)
+        notificationChannels.push(wecomChannel)
+        console.log(`[Hub] Wecom Webhook: enabled`)
+    } else {
+        console.log('[Hub] Wecom Webhook: disabled (no WECOM_WEBHOOK)')
+    }
+
     notificationHub = new NotificationHub(syncEngine, notificationChannels)
 
     // Start HTTP service first (before tunnel, so tunnel has something to forward to)
@@ -215,7 +225,8 @@ async function main() {
         socketEngine: socketServer.engine,
         corsOrigins,
         relayMode: relayFlag.enabled,
-        officialWebUrl
+        officialWebUrl,
+        hasGlobalWecomWebhook: () => config.wecomWebhookEnabled
     })
 
     // Start the bot if configured

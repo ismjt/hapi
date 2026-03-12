@@ -65,6 +65,13 @@ export default {
   'session.action.delete': 'Delete',
   'session.action.copy': 'Copy',
 
+  // Session notification
+  'session.notification.subscribe': 'Session End Notification',
+  'session.notification.notConfigured': 'Webhook not configured',
+  'session.notification.setWebhook': 'Set Webhook URL',
+  'session.notification.editWebhook': 'Edit Webhook URL',
+  'settings.notification.wecomWebhookPlaceholder': 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx',
+
   // Dialogs
   'dialog.rename.title': 'Rename Session',
   'dialog.rename.placeholder': 'Session name',
@@ -89,6 +96,7 @@ export default {
   'button.dismiss': 'Dismiss',
   'button.copy': 'Copy',
   'button.paste': 'Paste',
+  'button.clear': 'Clear',
 
   // New session form
   'newSession.title': 'Create Session',
@@ -210,6 +218,8 @@ export default {
   'composer.fillInput': 'Fill',
   'composer.deleteInput': 'Delete',
   'composer.saved': 'Saved',
+  'composer.quote': 'Quote',
+  'composer.quotedText': 'Quoted text',
 
   // Voice assistant
   'voice.connecting': 'Connecting...',
@@ -300,4 +310,5 @@ export default {
   'projects.delete.title': 'Delete Project',
   'projects.delete.description': 'Are you sure you want to delete "{name}"? This action cannot be undone.',
   'projects.directory.empty': 'This directory is empty.',
+  'projects.viewDirectory': 'View Directory',
 } as const

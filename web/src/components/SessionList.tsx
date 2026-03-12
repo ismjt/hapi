@@ -206,7 +206,11 @@ function SessionItem(props: {
             <button
                 type="button"
                 {...longPressHandlers}
-                className={`session-list-item flex w-full flex-col gap-1.5 px-3 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-link)] select-none ${selected ? 'bg-[var(--app-secondary-bg)]' : ''}`}
+                className={`session-list-item flex w-full flex-col gap-1.5 px-3 py-3 text-left transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-link)] select-none ${
+                    selected
+                        ? 'bg-[var(--app-secondary-bg)] border-r-4 border-[#16813d] pr-2.5'
+                        : 'border-r-4 border-transparent'
+                }`}
                 style={{ WebkitTouchCallout: 'none' }}
                 aria-current={selected ? 'page' : undefined}
             >
@@ -217,7 +221,7 @@ function SessionItem(props: {
                                 className={`h-2 w-2 rounded-full ${statusDotClass}`}
                             />
                         </span>
-                        <div className="truncate text-base font-medium">
+                        <div className={`truncate text-base font-medium ${selected ? 'text-[var(--app-link)]' : ''}`}>
                             {sessionName}
                         </div>
                     </div>
@@ -242,17 +246,17 @@ function SessionItem(props: {
                                 {t('session.item.pending')} {s.pendingRequestsCount}
                             </span>
                         ) : null}
-                        <span className="text-[var(--app-hint)]">
+                        <span className={`text-xs ${selected ? 'text-[var(--app-link)]/70' : 'text-[var(--app-hint)]'}`}>
                             {formatRelativeTime(s.updatedAt, t)}
                         </span>
                     </div>
                 </div>
                 {showPath ? (
-                    <div className="truncate text-xs text-[var(--app-hint)]">
+                    <div className={`truncate text-xs ${selected ? 'text-[var(--app-link)]/60' : 'text-[var(--app-hint)]'}`}>
                         {s.metadata?.path ?? s.id}
                     </div>
                 ) : null}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--app-hint)]">
+                <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${selected ? 'text-[var(--app-link)]/70' : 'text-[var(--app-hint)]'}`}>
                     <span className="inline-flex items-center gap-2">
                         <span className="flex h-4 w-4 items-center justify-center" aria-hidden="true">
                             ❖

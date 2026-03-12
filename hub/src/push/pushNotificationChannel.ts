@@ -92,6 +92,40 @@ export class PushNotificationChannel implements NotificationChannel {
         await this.pushService.sendToNamespace(session.namespace, payload)
     }
 
+    async sendEnd(session: Session): Promise<void> {
+        const name = getSessionName(session)
+        const agentName = getAgentName(session)
+
+        const payload: PushPayload = {
+            title: 'Session Ended',
+            body: `${agentName} session "${name}" has ended`,
+            tag: `session-end-${session.id}`,
+            data: {
+                type: 'session-end',
+                sessionId: session.id,
+                url: this.buildSessionPath(session.id)
+            }
+        }
+
+        const url = payload.data?.url ?? this.buildSessionPath(session.id)
+        if (this.visibilityTracker.hasVisibleConnection(session.namespace)) {
+            const delivered = await this.sseManager.sendToast(session.namespace, {
+                type: 'toast',
+                data: {
+                    title: payload.title,
+                    body: payload.body,
+                    sessionId: session.id,
+                    url
+                }
+            })
+            if (delivered > 0) {
+                return
+            }
+        }
+
+        await this.pushService.sendToNamespace(session.namespace, payload)
+    }
+
     private buildSessionPath(sessionId: string): string {
         return `/sessions/${sessionId}`
     }

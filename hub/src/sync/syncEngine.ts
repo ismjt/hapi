@@ -273,6 +273,16 @@ export class SyncEngine {
         await this.sessionCache.renameSession(sessionId, name)
     }
 
+    async updateSessionNotificationSettings(
+        sessionId: string,
+        settings: {
+            enabled?: boolean
+            wecomWebhook?: string | null
+        }
+    ): Promise<void> {
+        await this.sessionCache.updateNotificationSettings(sessionId, settings)
+    }
+
     async deleteSession(sessionId: string): Promise<void> {
         await this.sessionCache.deleteSession(sessionId)
     }
@@ -434,6 +444,10 @@ export class SyncEngine {
 
     async listDirectory(sessionId: string, path: string): Promise<RpcListDirectoryResponse> {
         return await this.rpcGateway.listDirectory(sessionId, path)
+    }
+
+    async listProjectDirectory(machineId: string, path: string): Promise<RpcListDirectoryResponse> {
+        return await this.rpcGateway.listProjectDirectory(machineId, path)
     }
 
     async uploadFile(sessionId: string, filename: string, content: string, mimeType: string): Promise<RpcUploadFileResponse> {

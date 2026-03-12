@@ -44,3 +44,4 @@ cli/npm/main/
 **/pnpm-lock.yaml
 
 .ace-tool/
+/token/

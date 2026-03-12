@@ -10,6 +10,13 @@ import { RenameSessionDialog } from '@/components/RenameSessionDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { getSessionTitle } from '@/lib/sessionTitle'
 import { useTranslation } from '@/lib/use-translation'
+import {
+    getSessionReadState,
+    markSessionReadInState,
+    persistSessionReadState,
+    isSessionUnread,
+    type SessionReadState,
+} from '@/lib/sessionReadState'
 
 type SessionGroup = {
     directory: string
@@ -155,10 +162,11 @@ function SessionItem(props: {
     showPath?: boolean
     api: ApiClient | null
     selected?: boolean
+    unread?: boolean
 }) {
     const { t } = useTranslation()
     const { generatedTitlesEnabled } = useGeneratedTitles()
-    const { session: s, onSelect, showPath = true, api, selected = false } = props
+    const { session: s, onSelect, showPath = true, api, selected = false, unread = false } = props
     const { haptic } = usePlatform()
     const [menuOpen, setMenuOpen] = useState(false)
     const [menuAnchorPoint, setMenuAnchorPoint] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
@@ -212,6 +220,11 @@ function SessionItem(props: {
                         </span>
                         <div className={`truncate text-base font-medium ${selected ? 'text-[var(--app-link)]' : ''}`}>
                             {sessionName}
+                            {unread ? (
+                                <span className="ml-2 inline-flex items-center rounded-full bg-[var(--app-badge-warning-bg)] px-2 py-0.5 text-xs font-medium text-[var(--app-badge-warning-text)]">
+                                    {t('session.item.unread')}
+                                </span>
+                            ) : null}
                         </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0 text-xs">
@@ -323,11 +336,29 @@ export function SessionList(props: {
     const [collapseOverrides, setCollapseOverrides] = useState<Map<string, boolean>>(
         () => new Map()
     )
+    const [readState, setReadState] = useState<SessionReadState>(() => getSessionReadState())
+
     const isGroupCollapsed = (group: SessionGroup): boolean => {
         const override = collapseOverrides.get(group.directory)
         if (override !== undefined) return override
+        // 保持有未读会话的组展开
+        const hasUnread = group.sessions.some(session => isSessionUnread(session, readState))
+        if (hasUnread) return false
         return !group.hasActiveSession
     }
+
+    // 当选中会话时标记为已读
+    useEffect(() => {
+        if (!selectedSessionId) return
+        const session = props.sessions.find(s => s.id === selectedSessionId)
+        if (!session || !session.updatedAt) return
+
+        const nextReadState = markSessionReadInState(readState, selectedSessionId, session.updatedAt)
+        if (nextReadState[selectedSessionId] !== readState[selectedSessionId]) {
+            setReadState(nextReadState)
+            persistSessionReadState(nextReadState)
+        }
+    }, [selectedSessionId, props.sessions])
 
     const toggleGroup = (directory: string, isCollapsed: boolean) => {
         setCollapseOverrides(prev => {
@@ -404,6 +435,7 @@ export function SessionList(props: {
                                             showPath={false}
                                             api={api}
                                             selected={s.id === selectedSessionId}
+                                            unread={isSessionUnread(s, readState)}
                                         />
                                     ))}
                                 </div>

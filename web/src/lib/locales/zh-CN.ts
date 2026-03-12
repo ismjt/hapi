@@ -50,6 +50,7 @@ export default {
   'session.item.worktree': '工作树',
   'session.item.pending': '待处理',
   'session.item.thinking': '思考中',
+  'session.item.unread': '新',
   'session.time.justNow': '刚刚',
   'session.time.minutesAgo': '{n} 分钟前',
   'session.time.hoursAgo': '{n} 小时前',
@@ -286,6 +287,12 @@ export default {
   'settings.about.protocolVersion': '协议版本',
   'settings.common.enabled': '开启',
   'settings.common.disabled': '关闭',
+
+  // Message status
+  'message.status.sending': '发送中',
+  'message.status.sent': '已发送',
+  'message.status.failed': '失败',
+  'message.status.queued': '排队中',
 
   // Misc
   'misc.noMachines': '无可用机器',

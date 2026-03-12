@@ -50,6 +50,7 @@ export default {
   'session.item.worktree': 'worktree',
   'session.item.pending': 'pending',
   'session.item.thinking': 'thinking',
+  'session.item.unread': 'New',
   'session.time.justNow': 'just now',
   'session.time.minutesAgo': '{n}m ago',
   'session.time.hoursAgo': '{n}h ago',
@@ -282,6 +283,12 @@ export default {
   'settings.about.protocolVersion': 'Protocol Version',
   'settings.common.enabled': 'Enabled',
   'settings.common.disabled': 'Disabled',
+
+  // Message status
+  'message.status.sending': 'Sending',
+  'message.status.sent': 'Sent',
+  'message.status.failed': 'Failed',
+  'message.status.queued': 'Queued',
 
   // Misc
   'misc.noMachines': 'No machines available',

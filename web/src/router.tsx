@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
     Navigate,
@@ -237,7 +237,17 @@ function SessionPage() {
         sendMessage,
         retryMessage,
         isSending,
+        isDequeuing,
+        queuedMessages,
+        setIsDequeuing,
     } = useSendMessage(api, sessionId, {
+        enableQueue: true,
+        isSessionRunning: (currentSessionId) => {
+            const currentSession = queryClient.getQueryData(
+                queryKeys.session(currentSessionId)
+            ) as { session: { active: boolean } } | undefined
+            return currentSession?.session?.active ?? false
+        },
         resolveSessionId: async (currentSessionId) => {
             if (!api || !session || session.active) {
                 return currentSessionId
@@ -315,6 +325,21 @@ function SessionPage() {
         void refetchSession()
         void refetchMessages()
     }, [refetchMessages, refetchSession])
+
+    // Track previous session active state to detect when session stops running
+    const wasActiveRef = useRef(false)
+    useEffect(() => {
+        const isNowActive = session?.active ?? false
+        const wasActive = wasActiveRef.current
+
+        // Update ref for next render
+        wasActiveRef.current = isNowActive
+
+        // When session transitions from active to inactive and has queued messages, start dequeuing
+        if (wasActive && !isNowActive && queuedMessages.length > 0 && !isDequeuing) {
+            setIsDequeuing(true)
+        }
+    }, [session?.active, queuedMessages.length, isDequeuing, setIsDequeuing])
 
     if (!session) {
         return (

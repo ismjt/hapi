@@ -65,6 +65,15 @@ export default {
   'session.action.delete': '删除',
   'session.action.copy': '复制',
 
+  // Session notification
+  'session.notification.subscribe': '会话结束通知',
+  'session.notification.notConfigured': '未配置 Webhook',
+  'session.notification.setWebhook': '设置当前会话 Webhook 地址',
+  'session.notification.editWebhook': '修改当前会会话 Webhook 地址',
+
+  // Settings notification
+  'settings.notification.wecomWebhookPlaceholder': 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx',
+
   // Dialogs
   'dialog.rename.title': '重命名会话',
   'dialog.rename.placeholder': '会话名称',
@@ -91,6 +100,7 @@ export default {
   'button.dismiss': '忽略',
   'button.copy': '复制',
   'button.paste': '粘贴',
+  'button.clear': '清除',
 
   // New session form
   'newSession.machine': '机器',
@@ -211,6 +221,8 @@ export default {
   'composer.fillInput': '回填',
   'composer.deleteInput': '删除',
   'composer.saved': '已保存',
+  'composer.quote': '引用',
+  'composer.quotedText': '引用内容',
 
   // Voice assistant
   'voice.connecting': '连接中...',
@@ -230,7 +242,7 @@ export default {
 
   // Banners
   'offline.title': '离线',
-  'offline.message': '您当前处于离线状态。某些功能可能受限。',
+  'offline.message': '请当前处于离线状态。某些功能可能受限。',
   'syncing.title': '同步中…',
   'syncing.message': '正在同步您的数据。',
   'reconnecting.message': '正在重新连接...',
@@ -275,7 +287,7 @@ export default {
   'misc.loadOlder': '加载更早的',
   'misc.newMessage': '{n} 条新消息',
   'misc.loadingMessages': '加载消息中…',
-  'misc.typeMessage': "输入 'continue' 继续...",
+  'misc.typeMessage': '输入 `continue` 继续...',
   'misc.typeAMessage': '输入消息...',
   'misc.offline': '离线',
   'misc.permissionRequired': '需要权限',
@@ -288,7 +300,7 @@ export default {
   'projects.namePlaceholder': '我的项目',
   'projects.path': '项目路径',
   'projects.tags': '标签',
-  'projects.tagsPlaceholder': '输入标签后按回车添加',
+  'projects.tagsPlaceholder': '输入标签后按车添加',
   'projects.tagsHint': '最多10个标签，每个标签50字符以内',
   'projects.empty': '暂无项目。创建一个开始使用。',
   'projects.create.title': '创建项目',
@@ -296,5 +308,6 @@ export default {
   'projects.edit.title': '编辑项目',
   'projects.delete.title': '删除项目',
   'projects.delete.description': '确定要删除 "{name}" 吗？此操作无法撤销。',
-  'projects.directory.empty': '此目录为空。',
-} as const
+  'projects.directory.empty': '此目录为空',
+  'projects.viewDirectory': '浏览目录'
+}

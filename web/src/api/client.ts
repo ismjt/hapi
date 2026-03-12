@@ -464,4 +464,49 @@ export class ApiClient {
             `/api/projects/${encodeURIComponent(projectId)}/directory${qs ? `?${qs}` : ''}`
         )
     }
+
+    // 更新会话的通知设置
+    async updateSessionNotificationSettings(
+        sessionId: string,
+        settings: {
+            enabled?: boolean
+            wecomWebhook?: string | null
+        }
+    ): Promise<{ ok: boolean }> {
+        return await this.request<{ ok: boolean }>(
+            `/api/sessions/${encodeURIComponent(sessionId)}/notification-settings`,
+            {
+                method: 'PATCH',
+                body: JSON.stringify(settings)
+            }
+        )
+    }
+
+    // 获取会话的通知设置
+    async getSessionNotificationSettings(sessionId: string): Promise<{
+        enabled: boolean
+        wecomWebhook: string | null
+    }> {
+        return await this.request<{
+            enabled: boolean
+            wecomWebhook: string | null
+        }>(`/api/sessions/${encodeURIComponent(sessionId)}/notification-settings`)
+    }
+
+    // 获取全局通知配置
+    async getNotificationConfig(): Promise<{
+        hasGlobalWecomWebhook: boolean
+    }> {
+        return await this.request<{
+            hasGlobalWecomWebhook: boolean
+        }>('/api/notification-config')
+    }
+
+    // 更新全局企业微信 Webhook
+    async updateGlobalWecomWebhook(wecomWebhook: string): Promise<void> {
+        await this.request('/api/notification-config', {
+            method: 'PATCH',
+            body: JSON.stringify({ wecomWebhook })
+        })
+    }
 }

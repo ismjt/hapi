@@ -21,6 +21,8 @@ import {
 } from './preferences'
 import { SessionTypeSelector } from './SessionTypeSelector'
 import { YoloToggle } from './YoloToggle'
+import { NotificationToggle } from './NotificationToggle'
+import { hasWecomWebhook, refreshGlobalConfig } from '@/hooks/useNotificationSettings'
 
 export function NewSession(props: {
     api: ApiClient
@@ -46,6 +48,7 @@ export function NewSession(props: {
     const [sessionType, setSessionType] = useState<SessionType>('simple')
     const [worktreeName, setWorktreeName] = useState('')
     const [error, setError] = useState<string | null>(null)
+    const [notificationEnabled, setNotificationEnabled] = useState(false)
     const worktreeInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -65,6 +68,11 @@ export function NewSession(props: {
     useEffect(() => {
         savePreferredYoloMode(yoloMode)
     }, [yoloMode])
+
+    // 加载全局通知配置
+    useEffect(() => {
+        refreshGlobalConfig(props.api)
+    }, [props.api])
 
     useEffect(() => {
         if (props.machines.length === 0) return
@@ -224,6 +232,18 @@ export function NewSession(props: {
                 haptic.notification('success')
                 setLastUsedMachineId(machineId)
                 addRecentPath(machineId, directory.trim())
+
+                // 如果启用了通知，更新会话的通知设置
+                if (notificationEnabled && hasWecomWebhook()) {
+                    try {
+                        await props.api.updateSessionNotificationSettings(result.sessionId, {
+                            enabled: true
+                        })
+                    } catch (error) {
+                        console.error('[NewSession] Failed to update notification settings:', error)
+                    }
+                }
+
                 props.onSuccess(result.sessionId)
                 return
             }
@@ -283,6 +303,12 @@ export function NewSession(props: {
                 yoloMode={yoloMode}
                 isDisabled={isFormDisabled}
                 onToggle={setYoloMode}
+            />
+
+            <NotificationToggle
+                enabled={notificationEnabled}
+                isDisabled={isFormDisabled}
+                onToggle={setNotificationEnabled}
             />
 
             {(error ?? spawnError) ? (

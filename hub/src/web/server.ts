@@ -19,6 +19,8 @@ import { createGitRoutes } from './routes/git'
 import { createCliRoutes } from './routes/cli'
 import { createPushRoutes } from './routes/push'
 import { createVoiceRoutes } from './routes/voice'
+import { createNotificationSettingsRoutes } from './routes/notificationSettings'
+import { createProjectsRoutes } from './routes/projects'
 import type { SSEManager } from '../sse/sseManager'
 import type { VisibilityTracker } from '../visibility/visibilityTracker'
 import type { Server as BunServer } from 'bun'
@@ -65,6 +67,7 @@ function createWebApp(options: {
     embeddedAssetMap: Map<string, EmbeddedWebAsset> | null
     relayMode?: boolean
     officialWebUrl?: string
+    hasGlobalWecomWebhook?: () => boolean
 }): Hono<WebAppEnv> {
     const app = new Hono<WebAppEnv>()
 
@@ -97,6 +100,14 @@ function createWebApp(options: {
     app.route('/api', createGitRoutes(options.getSyncEngine))
     app.route('/api', createPushRoutes(options.store, options.vapidPublicKey))
     app.route('/api', createVoiceRoutes())
+    app.route('/api', createNotificationSettingsRoutes(
+        options.getSyncEngine,
+        () => options.hasGlobalWecomWebhook?.() ?? false
+    ))
+    app.route('/api', createProjectsRoutes(
+        () => options.store.projects,
+        options.getSyncEngine
+    ))
 
     // Skip static serving in relay mode, show helpful message on root
     if (options.relayMode) {
@@ -212,6 +223,7 @@ export async function startWebServer(options: {
     corsOrigins?: string[]
     relayMode?: boolean
     officialWebUrl?: string
+    hasGlobalWecomWebhook?: () => boolean
 }): Promise<BunServer<WebSocketData>> {
     const isCompiled = isBunCompiled()
     const embeddedAssetMap = isCompiled ? await loadEmbeddedAssetMap() : null
@@ -225,7 +237,8 @@ export async function startWebServer(options: {
         corsOrigins: options.corsOrigins,
         embeddedAssetMap,
         relayMode: options.relayMode,
-        officialWebUrl: options.officialWebUrl
+        officialWebUrl: options.officialWebUrl,
+        hasGlobalWecomWebhook: options.hasGlobalWecomWebhook
     })
 
     const socketHandler = options.socketEngine.handler()

@@ -13,6 +13,7 @@ import { getSettingsFile, readSettings, writeSettings } from './settings'
 export interface ServerSettings {
     telegramBotToken: string | null
     telegramNotification: boolean
+    wecomWebhook: string | null
     listenHost: string
     listenPort: number
     publicUrl: string
@@ -24,6 +25,7 @@ export interface ServerSettingsResult {
     sources: {
         telegramBotToken: 'env' | 'file' | 'default'
         telegramNotification: 'env' | 'file' | 'default'
+        wecomWebhook: 'env' | 'file' | 'default'
         listenHost: 'env' | 'file' | 'default'
         listenPort: 'env' | 'file' | 'default'
         publicUrl: 'env' | 'file' | 'default'
@@ -87,6 +89,7 @@ export async function loadServerSettings(dataDir: string): Promise<ServerSetting
     const sources: ServerSettingsResult['sources'] = {
         telegramBotToken: 'default',
         telegramNotification: 'default',
+        wecomWebhook: 'default',
         listenHost: 'default',
         listenPort: 'default',
         publicUrl: 'default',
@@ -118,6 +121,20 @@ export async function loadServerSettings(dataDir: string): Promise<ServerSetting
     } else if (settings.telegramNotification !== undefined) {
         telegramNotification = settings.telegramNotification
         sources.telegramNotification = 'file'
+    }
+
+    // wecomWebhook: env > file > null
+    let wecomWebhook: string | null = null
+    if (process.env.WECOM_WEBHOOK) {
+        wecomWebhook = process.env.WECOM_WEBHOOK
+        sources.wecomWebhook = 'env'
+        if (settings.wecomWebhook === undefined) {
+            settings.wecomWebhook = wecomWebhook
+            needsSave = true
+        }
+    } else if (settings.wecomWebhook !== undefined) {
+        wecomWebhook = settings.wecomWebhook
+        sources.wecomWebhook = 'file'
     }
 
     // listenHost: env > file (new or old name) > default
@@ -212,6 +229,7 @@ export async function loadServerSettings(dataDir: string): Promise<ServerSetting
         settings: {
             telegramBotToken,
             telegramNotification,
+            wecomWebhook,
             listenHost,
             listenPort,
             publicUrl,

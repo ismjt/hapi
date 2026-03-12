@@ -14,6 +14,7 @@ export interface Settings {
     // Server configuration (persisted from environment variables)
     telegramBotToken?: string
     telegramNotification?: boolean
+    wecomWebhook?: string
     listenHost?: string
     listenPort?: number
     publicUrl?: string

@@ -238,6 +238,33 @@ export class HappyBot implements NotificationChannel {
             }
         }
     }
+
+    /**
+     * Send session end notification to all bound chats
+     */
+    async sendEnd(session: Session): Promise<void> {
+        const agentName = getAgentName(session)
+        const url = buildMiniAppDeepLink(this.publicUrl, `session_${session.id}`)
+        const keyboard = new InlineKeyboard()
+            .webApp('Open Session', url)
+
+        const chatIds = this.getBoundChatIds(session.namespace)
+        if (chatIds.length === 0) {
+            return
+        }
+
+        for (const chatId of chatIds) {
+            try {
+                await this.bot.api.sendMessage(
+                    chatId,
+                    `Session Ended\n\n${agentName} has finished the session`,
+                    { reply_markup: keyboard }
+                )
+            } catch (error) {
+                console.error(`[HAPIBot] Failed to send end notification to chat ${chatId}:`, error)
+            }
+        }
+    }
 }
 
 function buildMiniAppDeepLink(baseUrl: string, startParam: string): string {

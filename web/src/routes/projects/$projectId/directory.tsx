@@ -129,9 +129,9 @@ export default function ProjectDirectoryPage() {
         })
     }, [])
 
-    const handleBackToProjects = useCallback(() => {
-        navigate({ to: '/projects' })
-    }, [navigate])
+    const handleBackToProjectInfo = useCallback(() => {
+        navigate({ to: '/projects/$projectId', params: { projectId } })
+    }, [navigate, projectId])
 
     const sortedEntries = useMemo(() => {
         if (!entries) return []
@@ -150,7 +150,7 @@ export default function ProjectDirectoryPage() {
             <div className="flex items-center gap-2 border-b border-[var(--app-border)] bg-[var(--app-bg)] p-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
                 <button
                     type="button"
-                    onClick={handleBackToProjects}
+                    onClick={handleBackToProjectInfo}
                     className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--app-hint)] transition-colors hover:bg-[var(--app-secondary-bg)] hover:text-[var(--app-fg)]"
                 >
                     <BackIcon />

@@ -4,24 +4,12 @@ import type { ApiClient } from '@/api/client'
 import { isTelegramApp } from '@/hooks/useTelegram'
 import { useSessionActions } from '@/hooks/mutations/useSessionActions'
 import { useNotificationSettings } from '@/hooks/useNotificationSettings'
+import { useGeneratedTitles } from '@/hooks/useGeneratedTitles'
 import { SessionActionMenu } from '@/components/SessionActionMenu'
 import { RenameSessionDialog } from '@/components/RenameSessionDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { getSessionTitle } from '@/lib/sessionTitle'
 import { useTranslation } from '@/lib/use-translation'
-
-function getSessionTitle(session: Session): string {
-    if (session.metadata?.name) {
-        return session.metadata.name
-    }
-    if (session.metadata?.summary?.text) {
-        return session.metadata.summary.text
-    }
-    if (session.metadata?.path) {
-        const parts = session.metadata.path.split('/').filter(Boolean)
-        return parts.length > 0 ? parts[parts.length - 1] : session.id.slice(0, 8)
-    }
-    return session.id.slice(0, 8)
-}
 
 function FilesIcon(props: { className?: string }) {
     return (
@@ -68,8 +56,12 @@ export function SessionHeader(props: {
     onSessionDeleted?: () => void
 }) {
     const { t } = useTranslation()
+    const { generatedTitlesEnabled } = useGeneratedTitles()
     const { session, api, onSessionDeleted } = props
-    const title = useMemo(() => getSessionTitle(session), [session])
+    const title = useMemo(
+        () => getSessionTitle(session, { allowGeneratedTitle: generatedTitlesEnabled }),
+        [generatedTitlesEnabled, session]
+    )
     const worktreeBranch = session.metadata?.worktree?.branch
 
     const [menuOpen, setMenuOpen] = useState(false)

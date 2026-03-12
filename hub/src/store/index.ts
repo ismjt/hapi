@@ -6,8 +6,8 @@ import { MachineStore } from './machineStore'
 import { MessageStore } from './messageStore'
 import { ProjectStore } from './projectStore'
 import { PushStore } from './pushStore'
-import { SessionAliasStore } from './sessionAliasStore'
 import { SessionStore } from './sessionStore'
+import { SessionAliasStore } from './sessionAliasStore'
 import { UserStore } from './userStore'
 
 export type {
@@ -28,7 +28,7 @@ export { SessionAliasStore } from './sessionAliasStore'
 export { SessionStore } from './sessionStore'
 export { UserStore } from './userStore'
 
-const SCHEMA_VERSION: number = 7
+const SCHEMA_VERSION: number = 9
 const REQUIRED_TABLES = [
     'sessions',
     'machines',
@@ -165,6 +165,13 @@ export class Store {
             return
         }
 
+        // 支持 V8 -> V9 的迁移
+        if (currentVersion === 8 && SCHEMA_VERSION >= 9) {
+            this.migrateFromV8ToV9()
+            this.setUserVersion(SCHEMA_VERSION)
+            return
+        }
+
         if (currentVersion !== SCHEMA_VERSION) {
             throw this.buildSchemaMismatchError(currentVersion)
         }
@@ -187,6 +194,8 @@ export class Store {
                 agent_state_version INTEGER DEFAULT 1,
                 todos TEXT,
                 todos_updated_at INTEGER,
+                team_state TEXT,
+                team_state_updated_at INTEGER,
                 active INTEGER DEFAULT 0,
                 active_at INTEGER,
                 seq INTEGER DEFAULT 0
@@ -404,6 +413,21 @@ export class Store {
         this.db.exec(`
             ALTER TABLE projects ADD COLUMN tags TEXT DEFAULT '[]'
         `)
+    }
+
+    private migrateFromV8ToV9(): void {
+        const columns = this.getSessionColumnNames()
+        if (!columns.has('team_state')) {
+            this.db.exec('ALTER TABLE sessions ADD COLUMN team_state TEXT')
+        }
+        if (!columns.has('team_state_updated_at')) {
+            this.db.exec('ALTER TABLE sessions ADD COLUMN team_state_updated_at INTEGER')
+        }
+    }
+
+    private getSessionColumnNames(): Set<string> {
+        const rows = this.db.prepare('PRAGMA table_info(sessions)').all() as Array<{ name: string }>
+        return new Set(rows.map((row) => row.name))
     }
 
     private getMachineColumnNames(): Set<string> {

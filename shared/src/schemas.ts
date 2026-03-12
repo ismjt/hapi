@@ -51,6 +51,8 @@ export const MetadataSchema = z.object({
     archivedBy: z.string().optional(),
     archiveReason: z.string().optional(),
     flavor: z.string().nullish(),
+    model: z.string().optional(),
+    generatedTitleEnabled: z.boolean().optional(),
     worktree: WorktreeMetadataSchema.optional(),
     notification: NotificationSettingsSchema.optional()
 })

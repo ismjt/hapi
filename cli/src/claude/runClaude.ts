@@ -49,6 +49,7 @@ export async function runClaude(options: StartOptions = {}): Promise<void> {
         flavor: 'claude',
         startedBy,
         workingDirectory,
+        model: options.model,
         agentState: initialState
     });
     logger.debug(`Session created: ${sessionInfo.id}`);

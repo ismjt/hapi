@@ -20,6 +20,8 @@ export type SessionBootstrapOptions = {
     startedBy?: SessionStartedBy
     workingDirectory?: string
     tag?: string
+    model?: string
+    generatedTitleEnabled?: boolean
     agentState?: AgentState | null
 }
 
@@ -49,6 +51,8 @@ export function buildSessionMetadata(options: {
     startedBy: SessionStartedBy
     workingDirectory: string
     machineId: string
+    model?: string
+    generatedTitleEnabled?: boolean
     now?: number
 }): Metadata {
     const happyLibDir = runtimePath()
@@ -71,6 +75,8 @@ export function buildSessionMetadata(options: {
         lifecycleState: 'running',
         lifecycleStateSince: now,
         flavor: options.flavor,
+        model: options.model,
+        generatedTitleEnabled: options.generatedTitleEnabled,
         worktree: worktreeInfo ?? undefined
     }
 }
@@ -118,7 +124,9 @@ export async function bootstrapSession(options: SessionBootstrapOptions): Promis
         flavor: options.flavor,
         startedBy,
         workingDirectory,
-        machineId
+        machineId,
+        model: options.model,
+        generatedTitleEnabled: options.generatedTitleEnabled
     })
 
     const sessionInfo = await api.getOrCreateSession({

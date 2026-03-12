@@ -245,8 +245,8 @@ function SessionPage() {
         isSessionRunning: (currentSessionId) => {
             const currentSession = queryClient.getQueryData(
                 queryKeys.session(currentSessionId)
-            ) as { session: { active: boolean } } | undefined
-            return currentSession?.session?.active ?? false
+            ) as { session: { thinking?: boolean } } | undefined
+            return currentSession?.session?.thinking ?? false
         },
         resolveSessionId: async (currentSessionId) => {
             if (!api || !session || session.active) {
@@ -326,20 +326,26 @@ function SessionPage() {
         void refetchMessages()
     }, [refetchMessages, refetchSession])
 
-    // Track previous session active state to detect when session stops running
-    const wasActiveRef = useRef(false)
+    // Track previous session thinking state to detect when session stops processing
+    // 初始化为 null 以区分"尚未加载"和"已加载且为 false"
+    const wasThinkingRef = useRef<boolean | null>(null)
     useEffect(() => {
-        const isNowActive = session?.active ?? false
-        const wasActive = wasActiveRef.current
+        const isNowThinking = session?.thinking ?? false
+        const wasThinking = wasThinkingRef.current
 
         // Update ref for next render
-        wasActiveRef.current = isNowActive
+        wasThinkingRef.current = isNowThinking
 
-        // When session transitions from active to inactive and has queued messages, start dequeuing
-        if (wasActive && !isNowActive && queuedMessages.length > 0 && !isDequeuing) {
+        // 如果是首次加载，不做处理
+        if (wasThinking === null) {
+            return
+        }
+
+        // 当会话从思考状态变为空闲状态且有排队消息时，触发出队
+        if (wasThinking && !isNowThinking && queuedMessages.length > 0 && !isDequeuing && !isSending) {
             setIsDequeuing(true)
         }
-    }, [session?.active, queuedMessages.length, isDequeuing, setIsDequeuing])
+    }, [session?.thinking, queuedMessages.length, isDequeuing, setIsDequeuing, isSending])
 
     if (!session) {
         return (

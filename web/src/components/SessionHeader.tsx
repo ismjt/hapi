@@ -4,12 +4,20 @@ import type { ApiClient } from '@/api/client'
 import { isTelegramApp } from '@/hooks/useTelegram'
 import { useSessionActions } from '@/hooks/mutations/useSessionActions'
 import { useNotificationSettings } from '@/hooks/useNotificationSettings'
-import { useGeneratedTitles } from '@/hooks/useGeneratedTitles'
 import { SessionActionMenu } from '@/components/SessionActionMenu'
 import { RenameSessionDialog } from '@/components/RenameSessionDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { getSessionTitle } from '@/lib/sessionTitle'
 import { useTranslation } from '@/lib/use-translation'
+
+function getModelLabel(session: Session): string {
+    // 优先使用 metadata 中的实际模型名称
+    if (session.metadata?.model) {
+        return session.metadata.model
+    }
+    // 回退到 modelMode
+    return session.modelMode || 'default'
+}
 
 function FilesIcon(props: { className?: string }) {
     return (
@@ -56,11 +64,10 @@ export function SessionHeader(props: {
     onSessionDeleted?: () => void
 }) {
     const { t } = useTranslation()
-    const { generatedTitlesEnabled } = useGeneratedTitles()
     const { session, api, onSessionDeleted } = props
     const title = useMemo(
-        () => getSessionTitle(session, { allowGeneratedTitle: generatedTitlesEnabled }),
-        [generatedTitlesEnabled, session]
+        () => getSessionTitle(session),
+        [session]
     )
     const worktreeBranch = session.metadata?.worktree?.branch
 
@@ -89,6 +96,16 @@ export function SessionHeader(props: {
     const handleDelete = async () => {
         await deleteSession()
         onSessionDeleted?.()
+    }
+
+    const handleToggleGeneratedTitle = async () => {
+        if (!api) return
+        try {
+            await api.updateGeneratedTitleEnabled(session.id, !session.metadata?.generatedTitleEnabled)
+            window.location.reload()
+        } catch (error) {
+            console.error('[SessionHeader] Failed to update generated title setting:', error)
+        }
     }
 
     const handleMenuToggle = () => {
@@ -140,7 +157,7 @@ export function SessionHeader(props: {
                                 {session.metadata?.flavor?.trim() || 'unknown'}
                             </span>
                             <span>
-                                {t('session.item.modelMode')}: {session.modelMode || 'default'}
+                                {t('session.item.modelMode')}: {getModelLabel(session)}
                             </span>
                             {worktreeBranch ? (
                                 <span>{t('session.item.worktree')}: {worktreeBranch}</span>
@@ -188,6 +205,8 @@ export function SessionHeader(props: {
                 onToggleNotification={toggleNotification}
                 sessionWebhook={notificationSettings.wecomWebhook ?? ''}
                 onSessionWebhookChange={setSessionWebhook}
+                generatedTitleEnabled={session.metadata?.generatedTitleEnabled ?? true}
+                onToggleGeneratedTitle={handleToggleGeneratedTitle}
             />
 
             <RenameSessionDialog

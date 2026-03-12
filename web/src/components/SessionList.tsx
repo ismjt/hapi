@@ -4,7 +4,6 @@ import type { ApiClient } from '@/api/client'
 import { useLongPress } from '@/hooks/useLongPress'
 import { usePlatform } from '@/hooks/usePlatform'
 import { useSessionActions } from '@/hooks/mutations/useSessionActions'
-import { useGeneratedTitles } from '@/hooks/useGeneratedTitles'
 import { SessionActionMenu } from '@/components/SessionActionMenu'
 import { RenameSessionDialog } from '@/components/RenameSessionDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -142,6 +141,15 @@ function getAgentLabel(session: SessionSummary): string {
     return 'unknown'
 }
 
+function getModelLabel(session: SessionSummary): string {
+    // 优先使用 metadata 中的实际模型名称
+    if (session.metadata?.model) {
+        return session.metadata.model
+    }
+    // 回退到 modelMode
+    return session.modelMode || 'default'
+}
+
 function formatRelativeTime(value: number, t: (key: string, params?: Record<string, string | number>) => string): string | null {
     const ms = value < 1_000_000_000_000 ? value * 1000 : value
     if (!Number.isFinite(ms)) return null
@@ -165,7 +173,6 @@ function SessionItem(props: {
     unread?: boolean
 }) {
     const { t } = useTranslation()
-    const { generatedTitlesEnabled } = useGeneratedTitles()
     const { session: s, onSelect, showPath = true, api, selected = false, unread = false } = props
     const { haptic } = usePlatform()
     const [menuOpen, setMenuOpen] = useState(false)
@@ -179,6 +186,17 @@ function SessionItem(props: {
         s.id,
         s.metadata?.flavor ?? null
     )
+
+    const handleToggleGeneratedTitle = async () => {
+        if (!api) return
+        try {
+            await api.updateGeneratedTitleEnabled(s.id, !s.metadata?.generatedTitleEnabled)
+            // 触发会话列表刷新
+            window.location.reload()
+        } catch (error) {
+            console.error('[SessionItem] Failed to update generated title setting:', error)
+        }
+    }
 
     const longPressHandlers = useLongPress({
         onLongPress: (point) => {
@@ -194,7 +212,7 @@ function SessionItem(props: {
         threshold: 500
     })
 
-    const sessionName = getSessionTitle(s, { allowGeneratedTitle: generatedTitlesEnabled })
+    const sessionName = getSessionTitle(s)
     const statusDotClass = s.active
         ? (s.thinking ? 'bg-[#007AFF]' : 'bg-[var(--app-badge-success-text)]')
         : 'bg-[var(--app-hint)]'
@@ -265,7 +283,7 @@ function SessionItem(props: {
                         </span>
                         {getAgentLabel(s)}
                     </span>
-                    <span>{t('session.item.modelMode')}: {s.modelMode || 'default'}</span>
+                    <span>{t('session.item.modelMode')}: {getModelLabel(s)}</span>
                     {s.metadata?.worktree?.branch ? (
                         <span>{t('session.item.worktree')}: {s.metadata.worktree.branch}</span>
                     ) : null}
@@ -280,6 +298,8 @@ function SessionItem(props: {
                 onArchive={() => setArchiveOpen(true)}
                 onDelete={() => setDeleteOpen(true)}
                 anchorPoint={menuAnchorPoint}
+                generatedTitleEnabled={s.metadata?.generatedTitleEnabled ?? true}
+                onToggleGeneratedTitle={handleToggleGeneratedTitle}
             />
 
             <RenameSessionDialog

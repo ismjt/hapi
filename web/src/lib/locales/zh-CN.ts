@@ -72,6 +72,9 @@ export default {
   'session.notification.setWebhook': '设置当前会话 Webhook 地址',
   'session.notification.editWebhook': '修改当前会会话 Webhook 地址',
 
+  // Session generated title
+  'session.generatedTitle.enable': '自动生成标题',
+  'session.generatedTitle.description': '允许 AI 根据对话内容自动更新会话标题。',
   // Settings notification
   'settings.notification.wecomWebhookPlaceholder': 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx',
 
@@ -276,8 +279,6 @@ export default {
   'settings.display.appearance.dark': '深色',
   'settings.display.appearance.light': '浅色',
   'settings.display.fontSize': '字体大小',
-  'settings.display.generatedTitles': '自动标题',
-  'settings.display.generatedTitles.description': '允许 AI 工具自动持续更新会话标题。',
   'settings.voice.title': '语音助手',
   'settings.voice.language': '语音语言',
   'settings.voice.autoDetect': '自动检测',

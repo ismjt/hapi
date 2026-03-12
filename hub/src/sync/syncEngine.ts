@@ -273,6 +273,10 @@ export class SyncEngine {
         await this.sessionCache.renameSession(sessionId, name)
     }
 
+    async updateGeneratedTitleEnabled(sessionId: string, enabled: boolean): Promise<void> {
+        await this.sessionCache.updateGeneratedTitleEnabled(sessionId, enabled)
+    }
+
     async updateSessionNotificationSettings(
         sessionId: string,
         settings: {

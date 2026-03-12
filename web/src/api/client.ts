@@ -380,11 +380,12 @@ export class ApiClient {
         model?: string,
         yolo?: boolean,
         sessionType?: 'simple' | 'worktree',
-        worktreeName?: string
+        worktreeName?: string,
+        generatedTitleEnabled?: boolean
     ): Promise<SpawnResponse> {
         return await this.request<SpawnResponse>(`/api/machines/${encodeURIComponent(machineId)}/spawn`, {
             method: 'POST',
-            body: JSON.stringify({ directory, agent, model, yolo, sessionType, worktreeName })
+            body: JSON.stringify({ directory, agent, model, yolo, sessionType, worktreeName, generatedTitleEnabled })
         })
     }
 
@@ -404,6 +405,13 @@ export class ApiClient {
         await this.request(`/api/sessions/${encodeURIComponent(sessionId)}`, {
             method: 'PATCH',
             body: JSON.stringify({ name })
+        })
+    }
+
+    async updateGeneratedTitleEnabled(sessionId: string, enabled: boolean): Promise<void> {
+        await this.request(`/api/sessions/${encodeURIComponent(sessionId)}/generated-title`, {
+            method: 'PATCH',
+            body: JSON.stringify({ enabled })
         })
     }
 

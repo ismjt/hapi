@@ -38,6 +38,7 @@ export async function runCursor(opts: {
         flavor: 'cursor',
         startedBy,
         workingDirectory,
+        model: opts.model,
         agentState: state
     });
 

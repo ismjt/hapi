@@ -18,6 +18,10 @@ const renameSessionSchema = z.object({
     name: z.string().min(1).max(255)
 })
 
+const generatedTitleEnabledSchema = z.object({
+    enabled: z.boolean()
+})
+
 const uploadSchema = z.object({
     filename: z.string().min(1).max(255),
     content: z.string().min(1),
@@ -309,6 +313,36 @@ export function createSessionsRoutes(getSyncEngine: () => SyncEngine | null): Ho
             return c.json({ ok: true })
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to rename session'
+            // Map concurrency/version errors to 409 conflict
+            if (message.includes('concurrently') || message.includes('version')) {
+                return c.json({ error: message }, 409)
+            }
+            return c.json({ error: message }, 500)
+        }
+    })
+
+    app.patch('/sessions/:id/generated-title', async (c) => {
+        const engine = requireSyncEngine(c, getSyncEngine)
+        if (engine instanceof Response) {
+            return engine
+        }
+
+        const sessionResult = requireSessionFromParam(c, engine)
+        if (sessionResult instanceof Response) {
+            return sessionResult
+        }
+
+        const body = await c.req.json().catch(() => null)
+        const parsed = generatedTitleEnabledSchema.safeParse(body)
+        if (!parsed.success) {
+            return c.json({ error: 'Invalid body: enabled is required' }, 400)
+        }
+
+        try {
+            await engine.updateGeneratedTitleEnabled(sessionResult.sessionId, parsed.data.enabled)
+            return c.json({ ok: true })
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to update generated title setting'
             // Map concurrency/version errors to 409 conflict
             if (message.includes('concurrently') || message.includes('version')) {
                 return c.json({ error: message }, 409)

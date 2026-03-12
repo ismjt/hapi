@@ -73,6 +73,10 @@ export default {
   'session.notification.editWebhook': 'Edit Webhook URL',
   'settings.notification.wecomWebhookPlaceholder': 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx',
 
+  // Session generated title
+  'session.generatedTitle.enable': 'Auto-generated Title',
+  'session.generatedTitle.description': 'Allow AI to automatically update the session title based on conversation content.',
+
   // Dialogs
   'dialog.rename.title': 'Rename Session',
   'dialog.rename.placeholder': 'Session name',
@@ -272,8 +276,6 @@ export default {
   'settings.display.appearance.dark': 'Dark',
   'settings.display.appearance.light': 'Light',
   'settings.display.fontSize': 'Font Size',
-  'settings.display.generatedTitles': 'Generated Titles',
-  'settings.display.generatedTitles.description': 'Allow AI tools to keep updating session titles automatically.',
   'settings.voice.title': 'Voice Assistant',
   'settings.voice.language': 'Voice Language',
   'settings.voice.autoDetect': 'Auto-detect',

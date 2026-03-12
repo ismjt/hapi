@@ -21,8 +21,9 @@ import {
 } from './preferences'
 import { SessionTypeSelector } from './SessionTypeSelector'
 import { YoloToggle } from './YoloToggle'
-import { formatRunnerSpawnError } from '../../utils/formatRunnerSpawnError'
+import { formatRunnerSpawnError } from '@/utils/formatRunnerSpawnError'
 import { NotificationToggle } from './NotificationToggle'
+import { GeneratedTitleToggle } from './GeneratedTitleToggle'
 import { hasWecomWebhook, refreshGlobalConfig } from '@/hooks/useNotificationSettings'
 
 export function NewSession(props: {
@@ -50,6 +51,7 @@ export function NewSession(props: {
     const [worktreeName, setWorktreeName] = useState('')
     const [error, setError] = useState<string | null>(null)
     const [notificationEnabled, setNotificationEnabled] = useState(false)
+    const [generatedTitleEnabled, setGeneratedTitleEnabled] = useState(true)
     const worktreeInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
@@ -235,7 +237,8 @@ export function NewSession(props: {
                 model: resolvedModel,
                 yolo: yoloMode,
                 sessionType,
-                worktreeName: sessionType === 'worktree' ? (worktreeName.trim() || undefined) : undefined
+                worktreeName: sessionType === 'worktree' ? (worktreeName.trim() || undefined) : undefined,
+                generatedTitleEnabled
             })
 
             if (result.type === 'success') {
@@ -324,6 +327,12 @@ export function NewSession(props: {
                 enabled={notificationEnabled}
                 isDisabled={isFormDisabled}
                 onToggle={setNotificationEnabled}
+            />
+
+            <GeneratedTitleToggle
+                enabled={generatedTitleEnabled}
+                isDisabled={isFormDisabled}
+                onToggle={setGeneratedTitleEnabled}
             />
 
             {(error ?? spawnError) ? (

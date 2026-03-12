@@ -23,6 +23,8 @@ type SessionActionMenuProps = {
     onToggleNotification?: () => void
     sessionWebhook?: string
     onSessionWebhookChange?: (webhook: string) => void
+    generatedTitleEnabled?: boolean
+    onToggleGeneratedTitle?: () => void
 }
 
 function EditIcon(props: { className?: string }) {
@@ -109,6 +111,28 @@ function BellIcon(props: { className?: string }) {
     )
 }
 
+function TitleIcon(props: { className?: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={props.className}
+        >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2z" />
+            <path d="M8 10h.01" />
+            <path d="M12 10h.01" />
+            <path d="M16 10h.01" />
+        </svg>
+    )
+}
+
 type MenuPosition = {
     top: number
     left: number
@@ -129,7 +153,9 @@ export function SessionActionMenu(props: SessionActionMenuProps) {
         notificationEnabled,
         onToggleNotification,
         sessionWebhook,
-        onSessionWebhookChange
+        onSessionWebhookChange,
+        generatedTitleEnabled,
+        onToggleGeneratedTitle
     } = props
     const menuRef = useRef<HTMLDivElement | null>(null)
     const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null)
@@ -195,6 +221,12 @@ export function SessionActionMenu(props: SessionActionMenuProps) {
     const handleWebhookCancel = () => {
         setWebhookValue(sessionWebhook || '')
         setShowWebhookInput(false)
+    }
+
+    const handleToggleGeneratedTitle = () => {
+        if (onToggleGeneratedTitle) {
+            onToggleGeneratedTitle()
+        }
     }
 
     const updatePosition = useCallback(() => {
@@ -376,6 +408,33 @@ export function SessionActionMenu(props: SessionActionMenuProps) {
                         )}
                         <div className="my-1 border-t border-[var(--app-divider)]" />
                     </>
+                )}
+
+                {/* 自动标题开关 */}
+                {onToggleGeneratedTitle && (
+                    <div className="flex items-center justify-between px-3 py-2">
+                        <div className="flex items-center gap-3">
+                            <TitleIcon className="text-[var(--app-hint)]" />
+                            <span className="text-[var(--app-fg)]">
+                                {t('session.generatedTitle.enable')}
+                            </span>
+                        </div>
+                        <button
+                            type="button"
+                            role="switch"
+                            aria-checked={generatedTitleEnabled}
+                            onClick={handleToggleGeneratedTitle}
+                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--app-link)] ${
+                                generatedTitleEnabled ? 'bg-[#22c55e]' : 'bg-[var(--app-border)]'
+                            }`}
+                        >
+                            <span
+                                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                                    generatedTitleEnabled ? 'translate-x-4' : 'translate-x-0'
+                                }`}
+                            />
+                        </button>
+                    </div>
                 )}
 
                 <button

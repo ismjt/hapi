@@ -39,6 +39,7 @@ export async function runGemini(opts: {
         flavor: 'gemini',
         startedBy,
         workingDirectory,
+        model: opts.model,
         agentState: initialState
     });
 

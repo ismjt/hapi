@@ -5,14 +5,16 @@ type SessionLike = Pick<Session, 'id' | 'metadata'> | Pick<SessionSummary, 'id' 
 /**
  * 获取会话标题
  * @param session 会话对象
- * @param opts 选项，allowGeneratedTitle 控制是否使用AI生成的标题
+ * @param opts 选项，allowGeneratedTitle 控制是否使用AI生成的标题（默认从会话metadata读取）
  * @returns 会话标题字符串
  */
 export function getSessionTitle(
     session: SessionLike,
     opts: { allowGeneratedTitle?: boolean } = {}
 ): string {
-    const allowGeneratedTitle = opts.allowGeneratedTitle ?? true
+    // 优先使用会话级别的设置，如果没有则使用传入的选项，默认为true
+    const sessionSetting = session.metadata?.generatedTitleEnabled
+    const allowGeneratedTitle = opts.allowGeneratedTitle ?? (sessionSetting ?? true)
 
     // 手动设置的名称优先级最高
     if (session.metadata?.name) {

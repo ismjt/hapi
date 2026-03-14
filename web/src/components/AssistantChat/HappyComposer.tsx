@@ -18,6 +18,10 @@ import type { ConversationStatus } from '@/realtime/types'
 import { useActiveWord } from '@/hooks/useActiveWord'
 import { useActiveSuggestions } from '@/hooks/useActiveSuggestions'
 import { useSavedInputs } from '@/hooks/useSavedInputs'
+import { useQuickCommands } from '@/hooks/useQuickCommands'
+import { useAuth } from '@/hooks/useAuth'
+import { useAuthSource } from '@/hooks/useAuthSource'
+import { useServerUrl } from '@/hooks/useServerUrl'
 import { applySuggestion } from '@/utils/applySuggestion'
 import { usePlatform } from '@/hooks/usePlatform'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
@@ -29,6 +33,7 @@ import { StatusBar } from '@/components/AssistantChat/StatusBar'
 import { ComposerButtons } from '@/components/AssistantChat/ComposerButtons'
 import { AttachmentItem } from '@/components/AssistantChat/AttachmentItem'
 import { SavedInputsOverlay } from '@/components/AssistantChat/SavedInputsOverlay'
+import { QuickCommandsOverlay } from '@/components/AssistantChat/QuickCommandsOverlay'
 import { useTranslation } from '@/lib/use-translation'
 
 export interface TextInputState {
@@ -119,6 +124,7 @@ export function HappyComposer(props: {
     })
     const [showSettings, setShowSettings] = useState(false)
     const [showSavedInputs, setShowSavedInputs] = useState(false)
+    const [showQuickCommands, setShowQuickCommands] = useState(false)
     const [isAborting, setIsAborting] = useState(false)
     const [isSwitching, setIsSwitching] = useState(false)
     const [showContinueHint, setShowContinueHint] = useState(false)
@@ -132,6 +138,14 @@ export function HappyComposer(props: {
 
     // 保存输入功能（与当前会话关联）
     const { savedInputs, saveInput, deleteInput } = useSavedInputs(sessionId)
+
+    // 获取后端 API 客户端（用于快捷命令等后端操作）
+    const { baseUrl } = useServerUrl()
+    const { authSource } = useAuthSource(baseUrl)
+    const { api: backendApi } = useAuth(authSource, baseUrl)
+
+    // 快捷命令功能（与当前会话关联，存储在后端数据库）
+    const { commands, addCommand, deleteCommand, refresh: refreshQuickCommands } = useQuickCommands(backendApi, sessionId ?? undefined)
 
     const textareaRef = useRef<HTMLTextAreaElement>(null)
     const prevControlledByUser = useRef(controlledByUser)
@@ -524,6 +538,37 @@ export function HappyComposer(props: {
         haptic('light')
     }, [deleteInput, haptic])
 
+    // 快捷命令相关回调
+    const handleAddCommand = useCallback(async (text: string) => {
+        const success = await addCommand(text)
+        if (success) {
+            haptic('success')
+        }
+        return success
+    }, [addCommand, haptic])
+
+    const handleDeleteCommand = useCallback((id: string) => {
+        deleteCommand(id)
+        haptic('light')
+    }, [deleteCommand, haptic])
+
+    const handleSelectCommand = useCallback((text: string) => {
+        api.composer().setText(text)
+        haptic('light')
+    }, [api, haptic])
+
+    const handleToggleQuickCommands = useCallback(() => {
+        haptic('light')
+        setShowQuickCommands(prev => {
+            const newState = !prev
+            // 只在打开模态框时加载数据
+            if (newState && !prev) {
+                refreshQuickCommands()
+            }
+            return newState
+        })
+    }, [haptic, refreshQuickCommands])
+
     const overlays = useMemo(() => {
         if (showSettings && (showPermissionSettings || showModelSettings)) {
             return (
@@ -637,6 +682,19 @@ export function HappyComposer(props: {
             )
         }
 
+        // 快捷命令浮层
+        if (showQuickCommands) {
+            return (
+                <QuickCommandsOverlay
+                    commands={commands}
+                    onAddCommand={handleAddCommand}
+                    onDeleteCommand={handleDeleteCommand}
+                    onSelectCommand={handleSelectCommand}
+                    onClose={() => setShowQuickCommands(false)}
+                />
+            )
+        }
+
         return null
     }, [
         showSettings,
@@ -645,7 +703,9 @@ export function HappyComposer(props: {
         suggestions,
         selectedIndex,
         showSavedInputs,
+        showQuickCommands,
         savedInputs,
+        commands,
         controlsDisabled,
         permissionMode,
         modelMode,
@@ -654,7 +714,10 @@ export function HappyComposer(props: {
         handleModelChange,
         handleSuggestionSelect,
         handleFillInput,
-        handleDeleteSavedInput
+        handleDeleteSavedInput,
+        handleAddCommand,
+        handleDeleteCommand,
+        handleSelectCommand
     ])
 
     return (
@@ -759,6 +822,8 @@ export function HappyComposer(props: {
                             savedInputsCount={savedInputs.length}
                             savedInputsOpen={showSavedInputs}
                             settingsOpen={showSettings}
+                            quickCommandsOpen={showQuickCommands}
+                            onToggleQuickCommands={handleToggleQuickCommands}
                         />
                     </div>
                 </ComposerPrimitive.Root>

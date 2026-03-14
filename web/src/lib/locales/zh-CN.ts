@@ -76,7 +76,13 @@ export default {
   'session.generatedTitle.enable': '自动生成标题',
   'session.generatedTitle.description': '允许 AI 根据对话内容自动更新会话标题。',
   // Settings notification
+  'settings.notification.title': '通知',
+  'settings.notification.wecomWebhook': '企业微信 Webhook',
+  'settings.notification.wecomWebhookDescription': '全局企业微信机器人 Webhook 地址，每个会话可以单独覆盖此配置。',
   'settings.notification.wecomWebhookPlaceholder': 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx',
+  'settings.notification.save': '保存',
+  'settings.notification.saving': '保存中…',
+  'settings.notification.saved': '已保存',
 
   // Dialogs
   'dialog.rename.title': '重命名会话',
@@ -105,6 +111,8 @@ export default {
   'button.copy': '复制',
   'button.paste': '粘贴',
   'button.clear': '清除',
+  'button.add': '添加',
+  'button.delete': '删除',
 
   // New session form
   'newSession.title': '创建会话',
@@ -228,6 +236,12 @@ export default {
   'composer.saved': '已保存',
   'composer.quote': '引用',
   'composer.quotedText': '引用内容',
+  'composer.quickCommands.title': '快捷命令',
+  'composer.quickCommands.placeholder': '输入新命令...',
+  'composer.quickCommands.empty': '暂无快捷命令',
+  'composer.quickCommands.addNew': '新增命令',
+  'composer.quickCommands.addFailed': '添加命令失败，请重试。',
+  'composer.quickCommands.addError': '添加命令时发生错误。',
 
   // Voice assistant
   'voice.connecting': '连接中...',

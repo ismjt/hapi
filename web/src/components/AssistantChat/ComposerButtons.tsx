@@ -1,6 +1,7 @@
 import { ComposerPrimitive } from '@assistant-ui/react'
 import type { ConversationStatus } from '@/realtime/types'
 import { useTranslation } from '@/lib/use-translation'
+import { CommandIcon } from '@/components/icons'
 
 function VoiceAssistantIcon() {
     return (
@@ -385,11 +386,15 @@ export function ComposerButtons(props: {
     savedInputsCount: number
     savedInputsOpen?: boolean
     settingsOpen?: boolean
+    // 快捷命令功能
+    quickCommandsOpen?: boolean
+    onToggleQuickCommands: () => void
 }) {
     const { t } = useTranslation()
     const isVoiceConnected = props.voiceStatus === 'connected'
     const savedInputsOpen = props.savedInputsOpen ?? false
     const settingsOpen = props.settingsOpen ?? false
+    const quickCommandsOpen = props.quickCommandsOpen ?? false
 
     return (
         <div className="flex items-center justify-between px-2 pb-2">
@@ -431,6 +436,22 @@ export function ComposerButtons(props: {
                     onClick={props.onShowSavedInputs}
                 >
                     <HistoryIcon />
+                </button>
+
+                {/* 快捷命令按钮 */}
+                <button
+                    type="button"
+                    aria-label={t('composer.quickCommands.title')}
+                    title={t('composer.quickCommands.title')}
+                    disabled={props.controlsDisabled}
+                    className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                        quickCommandsOpen
+                            ? 'bg-blue-500 text-white'
+                            : 'text-[var(--app-fg)]/60 hover:bg-[var(--app-bg)] hover:text-[var(--app-fg)]'
+                    }`}
+                    onClick={props.onToggleQuickCommands}
+                >
+                    <CommandIcon />
                 </button>
 
                 {/* 清除按钮 */}

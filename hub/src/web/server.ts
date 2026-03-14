@@ -21,6 +21,7 @@ import { createPushRoutes } from './routes/push'
 import { createVoiceRoutes } from './routes/voice'
 import { createNotificationSettingsRoutes } from './routes/notificationSettings'
 import { createProjectsRoutes } from './routes/projects'
+import { createQuickCommandsRoutes } from './routes/quickCommands'
 import type { SSEManager } from '../sse/sseManager'
 import type { VisibilityTracker } from '../visibility/visibilityTracker'
 import type { Server as BunServer } from 'bun'
@@ -106,6 +107,10 @@ function createWebApp(options: {
     ))
     app.route('/api', createProjectsRoutes(
         () => options.store.projects,
+        options.getSyncEngine
+    ))
+    app.route('/api', createQuickCommandsRoutes(
+        () => options.store.quickCommands,
         options.getSyncEngine
     ))
 

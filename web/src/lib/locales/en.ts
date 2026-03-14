@@ -71,7 +71,13 @@ export default {
   'session.notification.notConfigured': 'Webhook not configured',
   'session.notification.setWebhook': 'Set Webhook URL',
   'session.notification.editWebhook': 'Edit Webhook URL',
+  'settings.notification.title': 'Notification',
+  'settings.notification.wecomWebhook': 'WeChat Work Webhook',
+  'settings.notification.wecomWebhookDescription': 'Global WeChat Work bot webhook URL. Each session can override this setting.',
   'settings.notification.wecomWebhookPlaceholder': 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx',
+  'settings.notification.save': 'Save',
+  'settings.notification.saving': 'Saving…',
+  'settings.notification.saved': 'Saved',
 
   // Session generated title
   'session.generatedTitle.enable': 'Auto-generated Title',
@@ -102,6 +108,8 @@ export default {
   'button.copy': 'Copy',
   'button.paste': 'Paste',
   'button.clear': 'Clear',
+  'button.add': 'Add',
+  'button.delete': 'Delete',
 
   // New session form
   'newSession.title': 'Create Session',
@@ -225,6 +233,12 @@ export default {
   'composer.saved': 'Saved',
   'composer.quote': 'Quote',
   'composer.quotedText': 'Quoted text',
+  'composer.quickCommands.title': 'Quick Commands',
+  'composer.quickCommands.placeholder': 'Enter new command...',
+  'composer.quickCommands.empty': 'No quick commands yet',
+  'composer.quickCommands.addNew': 'Add New',
+  'composer.quickCommands.addFailed': 'Failed to add command. Please try again.',
+  'composer.quickCommands.addError': 'An error occurred while adding the command.',
 
   // Voice assistant
   'voice.connecting': 'Connecting...',

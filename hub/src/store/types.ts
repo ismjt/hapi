@@ -79,3 +79,10 @@ export type StoredProject = {
     createdAt: number
     updatedAt: number
 }
+
+export type StoredQuickCommand = {
+    id: string
+    sessionId: string
+    text: string
+    createdAt: number
+}

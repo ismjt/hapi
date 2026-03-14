@@ -6,6 +6,7 @@ import { MachineStore } from './machineStore'
 import { MessageStore } from './messageStore'
 import { ProjectStore } from './projectStore'
 import { PushStore } from './pushStore'
+import { QuickCommandStore } from './quickCommandStore'
 import { SessionStore } from './sessionStore'
 import { SessionAliasStore } from './sessionAliasStore'
 import { UserStore } from './userStore'
@@ -15,6 +16,7 @@ export type {
     StoredMessage,
     StoredProject,
     StoredPushSubscription,
+    StoredQuickCommand,
     StoredSession,
     StoredSessionAlias,
     StoredUser,
@@ -24,11 +26,12 @@ export { MachineStore } from './machineStore'
 export { MessageStore } from './messageStore'
 export { ProjectStore } from './projectStore'
 export { PushStore } from './pushStore'
+export { QuickCommandStore } from './quickCommandStore'
 export { SessionAliasStore } from './sessionAliasStore'
 export { SessionStore } from './sessionStore'
 export { UserStore } from './userStore'
 
-const SCHEMA_VERSION: number = 9
+const SCHEMA_VERSION: number = 10
 const REQUIRED_TABLES = [
     'sessions',
     'machines',
@@ -37,7 +40,8 @@ const REQUIRED_TABLES = [
     'push_subscriptions',
     'session_aliases',
     'projects',
-    'notification_settings'
+    'notification_settings',
+    'quick_commands'
 ] as const
 
 export class Store {
@@ -51,6 +55,7 @@ export class Store {
     readonly push: PushStore
     readonly sessionAliases: SessionAliasStore
     readonly projects: ProjectStore
+    readonly quickCommands: QuickCommandStore
 
     constructor(dbPath: string) {
         this.dbPath = dbPath
@@ -94,6 +99,7 @@ export class Store {
         this.push = new PushStore(this.db)
         this.sessionAliases = new SessionAliasStore(this.db)
         this.projects = new ProjectStore(this.db)
+        this.quickCommands = new QuickCommandStore(this.db)
     }
 
     private initSchema(): void {
@@ -176,6 +182,13 @@ export class Store {
         // 支持 V8 -> V9 的迁移
         if (currentVersion === 8 && SCHEMA_VERSION >= 9) {
             this.migrateFromV8ToV9()
+            this.setUserVersion(SCHEMA_VERSION)
+            return
+        }
+
+        // 支持 V9 -> V10 的迁移
+        if (currentVersion === 9 && SCHEMA_VERSION >= 10) {
+            this.migrateFromV9ToV10()
             this.setUserVersion(SCHEMA_VERSION)
             return
         }
@@ -286,6 +299,16 @@ export class Store {
                 created_at INTEGER NOT NULL,
                 updated_at INTEGER NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS quick_commands (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                text TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_quick_commands_session_id ON quick_commands(session_id);
+            CREATE INDEX IF NOT EXISTS idx_quick_commands_created_at ON quick_commands(created_at);
         `)
     }
 
@@ -450,6 +473,21 @@ export class Store {
         if (!columns.has('team_state_updated_at')) {
             this.db.exec('ALTER TABLE sessions ADD COLUMN team_state_updated_at INTEGER')
         }
+    }
+
+    private migrateFromV9ToV10(): void {
+        // V10 adds quick_commands table for session-level quick commands
+        this.db.exec(`
+            CREATE TABLE IF NOT EXISTS quick_commands (
+                id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                text TEXT NOT NULL,
+                created_at INTEGER NOT NULL,
+                FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_quick_commands_session_id ON quick_commands(session_id);
+            CREATE INDEX IF NOT EXISTS idx_quick_commands_created_at ON quick_commands(created_at);
+        `)
     }
 
     private getSessionColumnNames(): Set<string> {

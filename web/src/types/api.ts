@@ -232,3 +232,20 @@ export type ProjectsResponse = { projects: Project[] }
 export type ProjectResponse = { project: Project }
 export type CreateProjectRequest = { name: string; path: string; tags?: string[] }
 export type UpdateProjectRequest = { name: string; path: string; tags?: string[] }
+
+// 快捷命令相关类型
+export type QuickCommand = {
+    id: string
+    text: string
+    createdAt: number
+}
+
+export type QuickCommandsResponse = {
+    commands: QuickCommand[]
+}
+
+export type QuickCommandResponse = {
+    ok: boolean
+    command: QuickCommand
+}
+

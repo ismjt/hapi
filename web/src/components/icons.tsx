@@ -60,3 +60,31 @@ export function CheckIcon(props: IconProps) {
         2
     )
 }
+
+export function DownloadIcon(props: IconProps) {
+    return createIcon(
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 7-7 7" />,
+        props,
+        2
+    )
+}
+
+export function CommandIcon(props: IconProps) {
+    return createIcon(
+        <>
+            <path d="m15 8-4 4 4 4" />
+            <path d="M18 12h-8" />
+            <rect x="2" y="3" width="20" height="18" rx="2" />
+        </>,
+        props,
+        2
+    )
+}
+
+export function PlusIcon(props: IconProps) {
+    return createIcon(
+        <path d="M12 5v14M5 12h14" />,
+        props,
+        2
+    )
+}

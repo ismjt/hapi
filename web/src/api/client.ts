@@ -3,7 +3,6 @@ import type {
     AuthResponse,
     CreateProjectRequest,
     DeleteUploadResponse,
-    ListDirectoryResponse,
     FileReadResponse,
     FileSearchResponse,
     GitCommandResponse,
@@ -17,6 +16,9 @@ import type {
     PushSubscriptionPayload,
     PushUnsubscribePayload,
     PushVapidPublicKeyResponse,
+    QuickCommand,
+    QuickCommandResponse,
+    QuickCommandsResponse,
     SlashCommandsResponse,
     SkillsResponse,
     SpawnResponse,
@@ -504,9 +506,11 @@ export class ApiClient {
     // 获取全局通知配置
     async getNotificationConfig(): Promise<{
         hasGlobalWecomWebhook: boolean
+        wecomWebhook: string | null
     }> {
         return await this.request<{
             hasGlobalWecomWebhook: boolean
+            wecomWebhook: string | null
         }>('/api/notification-config')
     }
 
@@ -516,5 +520,31 @@ export class ApiClient {
             method: 'PATCH',
             body: JSON.stringify({ wecomWebhook })
         })
+    }
+
+    // 快捷命令方法
+    async getQuickCommands(sessionId: string): Promise<QuickCommandsResponse> {
+        return await this.request<QuickCommandsResponse>(
+            `/api/sessions/${encodeURIComponent(sessionId)}/quick-commands`
+        )
+    }
+
+    async createQuickCommand(sessionId: string, text: string): Promise<QuickCommandResponse> {
+        return await this.request<QuickCommandResponse>(
+            `/api/sessions/${encodeURIComponent(sessionId)}/quick-commands`,
+            {
+                method: 'POST',
+                body: JSON.stringify({ text })
+            }
+        )
+    }
+
+    async deleteQuickCommand(sessionId: string, commandId: string): Promise<{ ok: boolean }> {
+        return await this.request<{ ok: boolean }>(
+            `/api/sessions/${encodeURIComponent(sessionId)}/quick-commands/${encodeURIComponent(commandId)}`,
+            {
+                method: 'DELETE'
+            }
+        )
     }
 }

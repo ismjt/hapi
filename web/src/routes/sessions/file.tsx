@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useParams, useSearch } from '@tanstack/react-router'
 import type { GitCommandResponse } from '@/types/api'
 import { FileIcon } from '@/components/FileIcon'
-import { CopyIcon, CheckIcon } from '@/components/icons'
+import { CopyIcon, CheckIcon, DownloadIcon } from '@/components/icons'
 import { useAppContext } from '@/lib/app-context'
 import { useAppGoBack } from '@/hooks/useAppGoBack'
 import { useCopyToClipboard } from '@/hooks/useCopyToClipboard'
@@ -110,6 +110,18 @@ function isBinaryContent(content: string): boolean {
     return nonPrintable / content.length > 0.1
 }
 
+function downloadFile(content: string, fileName: string): void {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = fileName
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+}
+
 function extractCommandError(result: GitCommandResponse | undefined): string | null {
     if (!result) return null
     if (result.success) return null
@@ -210,6 +222,16 @@ export default function FilePage() {
                         <div className="truncate font-semibold">{fileName}</div>
                         <div className="truncate text-xs text-[var(--app-hint)]">{filePath || 'Unknown path'}</div>
                     </div>
+                    {!binaryFile && decodedContent && (
+                        <button
+                            type="button"
+                            onClick={() => downloadFile(decodedContent, fileName)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full text-[var(--app-hint)] transition-colors hover:bg-[var(--app-secondary-bg)] hover:text-[var(--app-fg)]"
+                            title="Download file"
+                        >
+                            <DownloadIcon className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
             </div>
 

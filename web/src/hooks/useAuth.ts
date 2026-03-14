@@ -37,7 +37,7 @@ function isNotBoundError(error: unknown): boolean {
     return error instanceof ApiError && error.status === 401 && error.code === 'not_bound'
 }
 
-export function useAuth(authSource: AuthSource | null, baseUrl: string): {
+export function useAuth(authSource?: AuthSource | null, baseUrl?: string): {
     token: string | null
     user: AuthResponse['user'] | null
     api: ApiClient | null

@@ -14,6 +14,7 @@ export interface NotificationSettings {
 
 export interface GlobalNotificationConfig {
     hasGlobalWecomWebhook: boolean
+    wecomWebhook: string | null
 }
 
 // 全局配置缓存
@@ -61,7 +62,8 @@ export function useNotificationSettings(
         wecomWebhook: null
     })
     const [globalConfig, setGlobalConfig] = useState<GlobalNotificationConfig>({
-        hasGlobalWecomWebhook: false
+        hasGlobalWecomWebhook: false,
+        wecomWebhook: null
     })
     const [isLoading, setIsLoading] = useState(false)
 

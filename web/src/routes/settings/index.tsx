@@ -1,9 +1,11 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useTranslation, type Locale } from '@/lib/use-translation'
 import { useAppGoBack } from '@/hooks/useAppGoBack'
 import { getElevenLabsSupportedLanguages, getLanguageDisplayName, type Language } from '@/lib/languages'
 import { getFontScaleOptions, useFontScale, type FontScale } from '@/hooks/useFontScale'
 import { useAppearance, getAppearanceOptions, type AppearancePreference } from '@/hooks/useTheme'
+import { useAppContext } from '@/lib/app-context'
+import { refreshGlobalConfig } from '@/hooks/useNotificationSettings'
 import { PROTOCOL_VERSION } from '@hapi/protocol'
 
 const locales: { value: Locale; nativeLabel: string }[] = [
@@ -73,6 +75,7 @@ function ChevronDownIcon(props: { className?: string }) {
 export default function SettingsPage() {
     const { t, locale, setLocale } = useTranslation()
     const goBack = useAppGoBack()
+    const { api } = useAppContext()
     const [isOpen, setIsOpen] = useState(false)
     const [isAppearanceOpen, setIsAppearanceOpen] = useState(false)
     const [isFontOpen, setIsFontOpen] = useState(false)
@@ -83,6 +86,26 @@ export default function SettingsPage() {
     const voiceContainerRef = useRef<HTMLDivElement>(null)
     const { fontScale, setFontScale } = useFontScale()
     const { appearance, setAppearance } = useAppearance()
+
+    // 通知配置状态
+    const [webhookValue, setWebhookValue] = useState('')
+    const [isSavingWebhook, setIsSavingWebhook] = useState(false)
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
+
+    // 加载全局企业微信 Webhook 配置
+    useEffect(() => {
+        if (!api) return
+        api.getNotificationConfig()
+            .then(config => {
+                // 加载当前配置的 webhook 值
+                if (config.wecomWebhook) {
+                    setWebhookValue(config.wecomWebhook)
+                }
+            })
+            .catch(error => {
+                console.error('[Settings] Failed to load notification config:', error)
+            })
+    }, [api])
 
     // Voice language state - read from localStorage
     const [voiceLanguage, setVoiceLanguage] = useState<string | null>(() => {
@@ -120,6 +143,25 @@ export default function SettingsPage() {
         }
         setIsVoiceOpen(false)
     }
+
+    // 保存全局企业微信 Webhook
+    const handleSaveWebhook = useCallback(async () => {
+        if (!api) return
+        setIsSavingWebhook(true)
+        setSaveStatus('idle')
+        try {
+            await api.updateGlobalWecomWebhook(webhookValue)
+            await refreshGlobalConfig(api)
+            setSaveStatus('success')
+            setTimeout(() => setSaveStatus('idle'), 2000)
+        } catch (error) {
+            console.error('[Settings] Failed to save webhook:', error)
+            setSaveStatus('error')
+            setTimeout(() => setSaveStatus('idle'), 3000)
+        } finally {
+            setIsSavingWebhook(false)
+        }
+    }, [api, webhookValue])
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -396,6 +438,46 @@ export default function SettingsPage() {
                                         )
                                     })}
                                 </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Notification section */}
+                    <div className="border-b border-[var(--app-divider)]">
+                        <div className="px-3 py-2 text-xs font-semibold text-[var(--app-hint)] uppercase tracking-wide">
+                            {t('settings.notification.title')}
+                        </div>
+                        <div className="px-3 py-3">
+                            <label className="block text-sm text-[var(--app-fg)] mb-2">
+                                {t('settings.notification.wecomWebhook')}
+                            </label>
+                            <p className="text-xs text-[var(--app-hint)] mb-3">
+                                {t('settings.notification.wecomWebhookDescription')}
+                            </p>
+                            <div className="flex gap-2">
+                                <input
+                                    type="url"
+                                    value={webhookValue}
+                                    onChange={(e) => setWebhookValue(e.target.value)}
+                                    placeholder={t('settings.notification.wecomWebhookPlaceholder')}
+                                    className="flex-1 px-3 py-2 text-sm border border-[var(--app-border)] rounded-md bg-[var(--app-input-bg)] text-[var(--app-fg)] focus:outline-none focus:ring-2 focus:ring-[var(--app-primary)] focus:border-transparent disabled:opacity-50"
+                                    disabled={isSavingWebhook}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleSaveWebhook}
+                                    disabled={isSavingWebhook || !webhookValue.trim()}
+                                    className="px-4 py-2 text-sm font-medium rounded-md bg-[var(--app-primary)] text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity min-w-[60px]"
+                                >
+                                    {isSavingWebhook ? t('settings.notification.saving') :
+                                     saveStatus === 'success' ? t('settings.notification.saved') :
+                                     t('settings.notification.save')}
+                                </button>
+                            </div>
+                            {saveStatus === 'error' && (
+                                <p className="text-xs text-red-500 mt-2">
+                                    保存失败，请重试
+                                </p>
                             )}
                         </div>
                     </div>

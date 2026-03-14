@@ -22,10 +22,18 @@ export function createNotificationSettingsRoutes(
     const app = new Hono<WebAppEnv>()
 
     // 获取全局通知配置状态
-    app.get('/notification-config', (c) => {
-        return c.json({
-            hasGlobalWecomWebhook: hasGlobalWecomWebhook()
-        })
+    app.get('/notification-config', async (c) => {
+        try {
+            const config = getConfiguration()
+            const currentSettings = await readSettings(config.settingsFile)
+            return c.json({
+                hasGlobalWecomWebhook: hasGlobalWecomWebhook(),
+                wecomWebhook: currentSettings?.wecomWebhook ?? null
+            })
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to get notification config'
+            return c.json({ error: message }, 500)
+        }
     })
 
     // 更新全局通知配置（企业微信 Webhook)

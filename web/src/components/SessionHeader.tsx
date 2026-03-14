@@ -1,4 +1,5 @@
 import { useId, useMemo, useRef, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { Session } from '@/types/api'
 import type { ApiClient } from '@/api/client'
 import { isTelegramApp } from '@/hooks/useTelegram'
@@ -9,6 +10,7 @@ import { RenameSessionDialog } from '@/components/RenameSessionDialog'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { getSessionTitle } from '@/lib/sessionTitle'
 import { useTranslation } from '@/lib/use-translation'
+import { queryKeys } from '@/lib/query-keys'
 
 function getModelLabel(session: Session): string {
     // 优先使用 metadata 中的实际模型名称
@@ -64,6 +66,7 @@ export function SessionHeader(props: {
     onSessionDeleted?: () => void
 }) {
     const { t } = useTranslation()
+    const queryClient = useQueryClient()
     const { session, api, onSessionDeleted } = props
     const title = useMemo(
         () => getSessionTitle(session),
@@ -102,7 +105,8 @@ export function SessionHeader(props: {
         if (!api) return
         try {
             await api.updateGeneratedTitleEnabled(session.id, !session.metadata?.generatedTitleEnabled)
-            window.location.reload()
+            // 刷新会话数据
+            await queryClient.invalidateQueries({ queryKey: queryKeys.session(session.id) })
         } catch (error) {
             console.error('[SessionHeader] Failed to update generated title setting:', error)
         }

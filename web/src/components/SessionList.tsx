@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import type { SessionSummary } from '@/types/api'
 import type { ApiClient } from '@/api/client'
 import { useLongPress } from '@/hooks/useLongPress'
@@ -16,6 +17,7 @@ import {
     isSessionUnread,
     type SessionReadState,
 } from '@/lib/sessionReadState'
+import { queryKeys } from '@/lib/query-keys'
 
 type SessionGroup = {
     directory: string
@@ -173,6 +175,7 @@ function SessionItem(props: {
     unread?: boolean
 }) {
     const { t } = useTranslation()
+    const queryClient = useQueryClient()
     const { session: s, onSelect, showPath = true, api, selected = false, unread = false } = props
     const { haptic } = usePlatform()
     const [menuOpen, setMenuOpen] = useState(false)
@@ -191,8 +194,8 @@ function SessionItem(props: {
         if (!api) return
         try {
             await api.updateGeneratedTitleEnabled(s.id, !s.metadata?.generatedTitleEnabled)
-            // 触发会话列表刷新
-            window.location.reload()
+            // 刷新会话列表数据
+            await queryClient.invalidateQueries({ queryKey: queryKeys.sessions })
         } catch (error) {
             console.error('[SessionItem] Failed to update generated title setting:', error)
         }

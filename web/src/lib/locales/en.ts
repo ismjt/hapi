@@ -105,6 +105,7 @@ export default {
   'newSession.model': 'Model',
   'newSession.effort': 'Effort',
   'newSession.model.optional': 'optional',
+  'newSession.model.loadFailed': 'Failed to load Codex models',
   'newSession.reasoningEffort': 'Reasoning effort',
   'newSession.yolo': 'YOLO mode',
   'newSession.yolo.title': 'Bypass approvals and sandbox',
@@ -124,6 +125,7 @@ export default {
   'session.directoryMissingSimple': 'Directory does not exist. Creating the session will create it automatically.',
   'session.directoryMissingSimpleConfirm': 'Directory does not exist. Click again to create it automatically.',
   'session.directoryMissingWorktree': 'Worktree sessions require an existing repository directory.',
+  'session.codexModelsLoadFailed': 'Failed to load Codex models',
   'session.createAndCreateDirectory': 'Create and make directory',
 
   // Machine

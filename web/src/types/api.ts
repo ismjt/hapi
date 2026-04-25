@@ -194,6 +194,20 @@ export type SkillsResponse = {
     error?: string
 }
 
+export type CodexModelSummary = {
+    id: string
+    displayName: string
+    isDefault: boolean
+    defaultReasoningEffort?: string | null
+    supportedReasoningEfforts?: string[]
+}
+
+export type CodexModelsResponse = {
+    success: boolean
+    models?: CodexModelSummary[]
+    error?: string
+}
+
 export type PushSubscriptionKeys = {
     p256dh: string
     auth: string

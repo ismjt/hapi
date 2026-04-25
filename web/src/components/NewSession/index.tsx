@@ -4,6 +4,7 @@ import type { Machine } from '@/types/api'
 import { usePlatform } from '@/hooks/usePlatform'
 import { useMachinePathsExists } from '@/hooks/useMachinePathsExists'
 import { useSpawnSession } from '@/hooks/mutations/useSpawnSession'
+import { useCodexModels } from '@/hooks/queries/useCodexModels'
 import { useSessions } from '@/hooks/queries/useSessions'
 import { useActiveSuggestions, type Suggestion } from '@/hooks/useActiveSuggestions'
 import { useDirectorySuggestions } from '@/hooks/useDirectorySuggestions'
@@ -95,10 +96,28 @@ export function NewSession(props: {
         () => (machineId ? props.machines.find((machine) => machine.id === machineId) ?? null : null),
         [machineId, props.machines]
     )
+    const codexModelsState = useCodexModels({
+        api: props.api,
+        machineId,
+        enabled: agent === 'codex' && Boolean(machineId)
+    })
     const runnerSpawnError = useMemo(
         () => formatRunnerSpawnError(selectedMachine),
         [selectedMachine]
     )
+    const codexModelOptions = useMemo(() => {
+        const options = [{ value: 'auto', label: 'Default' }]
+        for (const codexModel of codexModelsState.models) {
+            options.push({
+                value: codexModel.id,
+                label: codexModel.displayName
+            })
+        }
+        if (model !== 'auto' && !options.some((option) => option.value === model)) {
+            options.splice(1, 0, { value: model, label: model })
+        }
+        return options
+    }, [codexModelsState.models, model])
 
     const recentPaths = useMemo(
         () => getRecentPaths(machineId),
@@ -326,7 +345,12 @@ export function NewSession(props: {
             <ModelSelector
                 agent={agent}
                 model={model}
-                isDisabled={isFormDisabled}
+                options={agent === 'codex' ? codexModelOptions : undefined}
+                isDisabled={isFormDisabled || (agent === 'codex' && Boolean(codexModelsState.error))}
+                isLoading={agent === 'codex' && codexModelsState.isLoading}
+                error={agent === 'codex' && codexModelsState.error
+                    ? `${t('newSession.model.loadFailed')}: ${codexModelsState.error}`
+                    : null}
                 onModelChange={setModel}
             />
             <ClaudeEffortSelector
